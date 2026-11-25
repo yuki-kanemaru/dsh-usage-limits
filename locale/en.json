@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Usage limits",
+    "description": "Shows ChatGPT, Claude, Gemini (Antigravity), and Mistral usage limits in the left sidebar footer above Settings, with per-provider toggles, detail panel, Antigravity statusLine quota sync, and optional Mistral Admin cookie fallback."
+  }
+}

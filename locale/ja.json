@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "利用上限モニター",
+    "description": "左サイドバー下部（設定の上）に ChatGPT・Claude・Gemini（Antigravity）・Mistral の利用上限を表示します。プロバイダーごとの ON/OFF 切替、詳細パネル、Antigravity 公式 statusLine 連携、Mistral 管理画面 Cookie フォールバックに対応します。"
+  }
+}

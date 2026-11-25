@@ -1,0 +1,70 @@
+{
+  "name": "dsh-usage-limits",
+  "version": "0.1.0",
+  "description": "Displays ChatGPT, Claude, Gemini (Antigravity), and Mistral usage limits in the DeepSeek Harness left sidebar footer with per-provider toggles.",
+  "license": "MIT",
+  "author": "yuki-kanemaru",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "usage",
+    "quota",
+    "chatgpt",
+    "claude",
+    "gemini",
+    "antigravity",
+    "mistral"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yuki-kanemaru/dsh-usage-limits.git"
+  },
+  "homepage": "https://github.com/yuki-kanemaru/dsh-usage-limits#readme",
+  "bugs": {
+    "url": "https://github.com/yuki-kanemaru/dsh-usage-limits/issues"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "type": "module",
+  "main": "./index.js",
+  "icon": "icon.svg",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "check": "node --check index.js && node --check client.js && node --check lib/config-store.js && node --check lib/http-body.js && node --check lib/usage-tracker.js && node --check lib/agy-hook-setup.js && node --check lib/providers/chatgpt.js && node --check lib/providers/claude.js && node --check lib/providers/gemini.js && node --check lib/providers/mistral.js && node --check scripts/agy-statusline-hook.mjs"
+  },
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "lib",
+    "scripts",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "README.ja.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-sidebar",
+        "@deepseek-ai/dsh-client-ui-layout",
+        "@deepseek-ai/dsh-client-locale"
+      ]
+    }
+  }
+}
