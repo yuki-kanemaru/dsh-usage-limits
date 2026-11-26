@@ -11,6 +11,12 @@ import { fetchChatGptQuota, parseChatGptUsage } from '../lib/providers/chatgpt.j
 import { fetchClaudeQuota, parseClaudeUsage } from '../lib/providers/claude.js'
 import { fetchGeminiQuota, parseAgyQuotaCache } from '../lib/providers/gemini.js'
 import { fetchMistralQuota, parseApiBilling } from '../lib/providers/mistral.js'
+import {
+  calculateEffectiveYenPerKwh,
+  createPcMonitor,
+  estimateSystemWatts,
+  parseNvidiaSmiCsv,
+} from '../lib/pc-monitor.js'
 import { createUsageLimitsService } from '../index.js'
 
 function makeTmpDir() {
@@ -331,6 +337,101 @@ test('usage-limits service flags credential retry when Mistral refreshes before 
   } finally {
     if (prevApiKey !== undefined) process.env.MISTRAL_API_KEY = prevApiKey
     if (prevCookie !== undefined) process.env.MISTRAL_ADMIN_COOKIE = prevCookie
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('pc-monitor calculates myTOKYOGAS rates, parses nvidia-smi, and tracks boot/today/month electricity cost', async () => {
+  const dir = makeTmpDir()
+  try {
+    // Tier 2 default: (35.74 - 4.65) * 0.995 + 4.18 = 35.11455 -> 35.11 yen/kWh
+    const t2 = calculateEffectiveYenPerKwh({
+      tariffTier: 'tier2',
+      fuelAdjustmentYen: -4.65,
+      renewableSurchargeYen: 4.18,
+      includeRenewableSurcharge: true,
+      gasSetDiscount: true,
+    })
+    assert.equal(t2.tierId, 'tier2')
+    assert.equal(t2.effectiveYenPerKwh, 35.11)
+
+    const t3NoDiscount = calculateEffectiveYenPerKwh({
+      tariffTier: 'tier3',
+      fuelAdjustmentYen: 0,
+      renewableSurchargeYen: 4.18,
+      includeRenewableSurcharge: true,
+      gasSetDiscount: false,
+    })
+    assert.equal(t3NoDiscount.effectiveYenPerKwh, 43.73)
+
+    const gpu = parseNvidiaSmiCsv('NVIDIA GeForce RTX 5060 Ti, 12, 2496, 8151, 24.35, 180.00, 50')
+    assert.equal(gpu.name, 'NVIDIA GeForce RTX 5060 Ti')
+    assert.equal(gpu.utilPercent, 12)
+    assert.equal(gpu.powerWatts, 24.4)
+    assert.equal(gpu.tempC, 50)
+    assert.equal(parseNvidiaSmiCsv(''), null)
+
+    const watts = estimateSystemWatts({
+      cpuPercent: 50,
+      gpu,
+      pcConfig: { baseSystemWatts: 55, cpuDynamicWatts: 85, extraWatts: 20, psuEfficiency: 0.88 },
+    })
+    // dc = 55 + 42.5 + 24.4 = 121.9; wall = 121.9 / 0.88 + 20 = 158.5
+    assert.equal(watts.gpuMeasured, true)
+    assert.equal(watts.wallWatts, 158.5)
+
+    let cpuStep = 0
+    const cpuSamples = [
+      [{ model: 'Test CPU', times: { user: 100, nice: 0, sys: 0, idle: 900, irq: 0 } }],
+      [{ model: 'Test CPU', times: { user: 200, nice: 0, sys: 0, idle: 1000, irq: 0 } }],
+      [{ model: 'Test CPU', times: { user: 300, nice: 0, sys: 0, idle: 1100, irq: 0 } }],
+    ]
+    const baseTime = Date.UTC(2026, 10, 27, 1, 0, 0)
+    let simNow = baseTime
+    const monitor = createPcMonitor({
+      dataDir: dir,
+      getCpus: () => cpuSamples[Math.min(cpuStep++, cpuSamples.length - 1)],
+      getTotalMem: () => 32 * 1024 ** 3,
+      getFreeMem: () => 16 * 1024 ** 3,
+      getUptime: () => 36000 + Math.floor((simNow - baseTime) / 1000),
+      probeGpu: async () => gpu,
+    })
+
+    const s1 = await monitor.sample(
+      {
+        tariffTier: 'tier2',
+        fuelAdjustmentYen: -4.65,
+        renewableSurchargeYen: 4.18,
+        includeRenewableSurcharge: true,
+        gasSetDiscount: true,
+        baseSystemWatts: 55,
+        cpuDynamicWatts: 85,
+        extraWatts: 0,
+        psuEfficiency: 0.88,
+      },
+      simNow,
+    )
+    assert.equal(s1.status, 'ok')
+    assert.equal(s1.cpu.percent, 50)
+    assert.equal(s1.memory.percent, 50)
+    assert.equal(s1.uptime.seconds, 36000)
+    assert.ok(s1.energy.bootKwh > 1.0)
+    assert.ok(s1.energy.bootYen > 30)
+
+    simNow = baseTime + 60_000
+    const s2 = await monitor.sample({ tariffTier: 'tier2' }, simNow)
+    assert.ok(s2.energy.bootKwh > 0)
+    assert.ok(s2.energy.monthKwh >= s2.energy.todayKwh)
+
+    // Sleep gap (>120s) must not inflate today's accumulated energy.
+    simNow = baseTime + 60_000 + 3 * 3600_000
+    const s3 = await monitor.sample({ tariffTier: 'tier2' }, simNow)
+    assert.ok(Math.abs(s3.energy.todayKwh - s2.energy.todayKwh) < 0.01)
+
+    monitor.flush()
+    const persisted = JSON.parse(readFileSync(monitor.energyFile, 'utf8'))
+    assert.ok(persisted.bootTrackedSec >= 60)
+  } finally {
     rmSync(dir, { recursive: true, force: true })
   }
 })

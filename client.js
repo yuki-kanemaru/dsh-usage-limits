@@ -31,8 +31,8 @@ window.__ModuleLoader__.load({
     const DICT = {
       en: {
         title: 'Usage limits',
-        subtitle: 'ChatGPT · Claude · Gemini (Antigravity) · Mistral',
-        summary: 'Displays ChatGPT, Claude, Gemini (Antigravity), and Mistral usage limits in the left sidebar footer.',
+        subtitle: 'ChatGPT · Claude · Gemini (Antigravity) · Mistral · PC',
+        summary: 'Displays ChatGPT, Claude, Gemini (Antigravity), Mistral usage limits and PC telemetry in the left sidebar footer.',
         refresh: 'Refresh',
         refreshing: 'Refreshing…',
         close: 'Close',
@@ -107,6 +107,39 @@ window.__ModuleLoader__.load({
         providerShort_gemini: 'Gem',
         providerShort_partner: 'AGY',
         providerShort_mistral: 'Mis',
+        pcName: 'PC',
+        pcShort: 'PC',
+        pcTitle: 'PC status',
+        pcCpu: 'CPU',
+        pcMem: 'MEM',
+        pcMemoryFull: 'Memory',
+        pcGpu: 'GPU',
+        pcUptime: 'Uptime',
+        pcBootSince: 'Booted {time}',
+        pcBootCost: 'Cost this boot',
+        pcTodayCost: 'Cost today',
+        pcMonthCost: 'Cost this month',
+        pcPower: 'Est. power',
+        pcRate: 'Applied rate',
+        pcMeasuredGpu: 'GPU {w}W live',
+        pcEstOnly: 'CPU/system est.',
+        pcSettingsTitle: 'PC power & myTOKYOGAS electricity rate',
+        pcSettingsHint: 'Based on Tokyo Gas Basic Plan (Dec 2026 rates) + renewable surcharge + fuel adjustment. Uses live nvidia-smi GPU watts when available.',
+        pcTier1: 'Tier 1 (¥29.75)',
+        pcTier2: 'Tier 2 (¥35.74)',
+        pcTier3: 'Tier 3 (¥39.55)',
+        pcTierLabel_tier1: 'myTOKYOGAS Tier 1',
+        pcTierLabel_tier2: 'myTOKYOGAS Tier 2',
+        pcTierLabel_tier3: 'myTOKYOGAS Tier 3',
+        pcTierLabel_custom: 'Custom rate',
+        pcReSurcharge: 'Renewable (+¥4.18)',
+        pcGasSetDiscount: 'Gas+Elec set (-0.5%)',
+        pcFuelAdj: 'Fuel adj. (¥/kWh)',
+        pcCustomRate: 'Custom base (0=plan)',
+        pcBaseWatts: 'Base idle (W)',
+        pcCpuWatts: 'CPU max load (W)',
+        pcExtraWatts: 'Monitor/extra (W)',
+        pcPsuEff: 'PSU eff. (%)',
         window_5h: '5-hour window',
         window_weekly: 'Weekly window',
         window_monthly: 'Monthly budget',
@@ -116,8 +149,8 @@ window.__ModuleLoader__.load({
       },
       ja: {
         title: '利用上限',
-        subtitle: 'ChatGPT · Claude · Gemini（Antigravity）· Mistral',
-        summary: '左サイドバー下部に ChatGPT・Claude・Gemini（Antigravity）・Mistral の利用上限を表示します。',
+        subtitle: 'ChatGPT · Claude · Gemini（Antigravity）· Mistral · PC',
+        summary: '左サイドバー下部に ChatGPT・Claude・Gemini（Antigravity）・Mistral の利用上限と PC 状況を表示します。',
         refresh: '更新',
         refreshing: '更新中…',
         close: '閉じる',
@@ -192,6 +225,39 @@ window.__ModuleLoader__.load({
         providerShort_gemini: 'Gem',
         providerShort_partner: 'AGY',
         providerShort_mistral: 'Mis',
+        pcName: 'PC',
+        pcShort: 'PC',
+        pcTitle: 'PC ステータス',
+        pcCpu: 'CPU',
+        pcMem: 'MEM',
+        pcMemoryFull: 'メモリ',
+        pcGpu: 'GPU',
+        pcUptime: '起動経過',
+        pcBootSince: '{time} 起動',
+        pcBootCost: '起動中の電気代',
+        pcTodayCost: '本日の電気代',
+        pcMonthCost: '今月の電気代',
+        pcPower: '推定消費電力',
+        pcRate: '適用単価',
+        pcMeasuredGpu: 'GPU {w}W 実測',
+        pcEstOnly: 'CPU/システム推定',
+        pcSettingsTitle: 'PC 消費電力・電気代設定（myTOKYOGAS 基本プラン基準）',
+        pcSettingsHint: '東京ガス「基本プラン」（2026年12月改定基準）＋再エネ賦課金＋燃料費調整額で推定します。NVIDIA GPU 環境では実測 W を反映します。',
+        pcTier1: '第1段階 (29.75円)',
+        pcTier2: '第2段階 (35.74円)',
+        pcTier3: '第3段階 (39.55円)',
+        pcTierLabel_tier1: 'myTOKYOGAS 第1段階',
+        pcTierLabel_tier2: 'myTOKYOGAS 第2段階',
+        pcTierLabel_tier3: 'myTOKYOGAS 第3段階',
+        pcTierLabel_custom: '独自単価',
+        pcReSurcharge: '再エネ賦課金 (+4.18円)',
+        pcGasSetDiscount: 'ガス・電気セット割 (-0.5%)',
+        pcFuelAdj: '燃調費 (円/kWh)',
+        pcCustomRate: '独自単価 (0=プラン)',
+        pcBaseWatts: '基礎電力 (W)',
+        pcCpuWatts: 'CPU負荷増分 (W)',
+        pcExtraWatts: 'モニター等 (W)',
+        pcPsuEff: '電源効率 (%)',
         window_5h: '5時間枠',
         window_weekly: '週間枠',
         window_monthly: '月間予算',
@@ -419,6 +485,95 @@ window.__ModuleLoader__.load({
       } catch {
         return ''
       }
+    }
+
+    function formatBootDateTime(ms) {
+      if (!ms || !Number.isFinite(ms)) return ''
+      try {
+        return new Date(ms).toLocaleString([], { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+      } catch {
+        return ''
+      }
+    }
+
+    function formatUptime(seconds, compact = false) {
+      const sec = Math.max(0, Math.floor(Number(seconds) || 0))
+      if (sec < 60) return '<1m'
+      const hours = Math.floor(sec / 3600)
+      const mins = Math.floor((sec % 3600) / 60)
+      if (compact) {
+        if (hours >= 1) return `${hours}h`
+        return `${mins}m`
+      }
+      if (hours >= 100) {
+        const days = Math.floor(hours / 24)
+        return `${hours}h (${days}d)`
+      }
+      if (hours >= 1) return `${hours}h ${mins}m`
+      return `${mins}m`
+    }
+
+    function formatYen(amount) {
+      if (typeof amount !== 'number' || !Number.isFinite(amount)) return '—'
+      if (amount < 10) return `¥${amount.toFixed(1)}`
+      return `¥${Math.round(amount).toLocaleString()}`
+    }
+
+    function severityForUsage(usedPercent) {
+      if (typeof usedPercent !== 'number' || !Number.isFinite(usedPercent)) return 'normal'
+      if (usedPercent >= 90) return 'danger'
+      if (usedPercent >= 75) return 'warn'
+      return 'normal'
+    }
+
+    function buildPcBarItems(pc, t) {
+      if (!pc || pc.status !== 'ok') return []
+      const cpuPct = Math.max(0, Math.min(100, Number(pc.cpu?.percent) || 0))
+      const memPct = Math.max(0, Math.min(100, Number(pc.memory?.percent) || 0))
+      const cpuSev = severityForUsage(cpuPct)
+      const memSev = severityForUsage(memPct)
+      const memSub = pc.memory?.usedGb !== undefined && pc.memory?.totalGb !== undefined
+        ? ` (${pc.memory.usedGb}/${pc.memory.totalGb} GB)`
+        : ''
+      return [
+        {
+          w: { id: 'pc-cpu' },
+          clampedPct: cpuPct,
+          sev: cpuSev,
+          label: t('pcCpu'),
+          tip: `${t('pcCpu')} ${Math.round(cpuPct)}%`,
+          valueText: `${t('pcCpu')} ${Math.round(cpuPct)}%`,
+        },
+        {
+          w: { id: 'pc-mem' },
+          clampedPct: memPct,
+          sev: memSev,
+          label: t('pcMem'),
+          tip: `${t('pcMem')} ${Math.round(memPct)}%${memSub}`,
+          valueText: `${t('pcMem')} ${Math.round(memPct)}%`,
+        },
+      ]
+    }
+
+    function buildPcTooltip(pc, t) {
+      if (!pc || pc.status !== 'ok') return t('pcTitle')
+      const parts = [
+        t('pcName'),
+        `${t('pcCpu')} ${Math.round(pc.cpu?.percent || 0)}%`,
+        `${t('pcMem')} ${Math.round(pc.memory?.percent || 0)}%`,
+      ]
+      if (pc.gpu && pc.gpu.utilPercent !== null && pc.gpu.utilPercent !== undefined) {
+        const wStr = pc.gpu.powerWatts !== null && pc.gpu.powerWatts !== undefined ? ` ${Math.round(pc.gpu.powerWatts)}W` : ''
+        parts.push(`${t('pcGpu')} ${Math.round(pc.gpu.utilPercent)}%${wStr}`)
+      }
+      if (pc.uptime?.seconds !== undefined) {
+        parts.push(`${t('pcUptime')} ${formatUptime(pc.uptime.seconds, false)}`)
+      }
+      if (pc.energy?.bootYen !== undefined) {
+        const rateStr = pc.power?.hourlyYen !== undefined ? ` (${formatYen(pc.power.hourlyYen)}/h)` : ''
+        parts.push(`${formatYen(pc.energy.bootYen)}${rateStr}`)
+      }
+      return parts.join(' · ')
     }
 
     function formatWindowLabel(win, t, compact = false) {
@@ -961,6 +1116,8 @@ window.__ModuleLoader__.load({
       const displayMode = config?.displayMode || 'remaining'
       const order = snapshot?.order || ['chatgpt', 'claude', 'gemini', 'mistral']
       const providers = snapshot?.providers || {}
+      const pc = snapshot?.pc || null
+      const pcEnabled = Boolean(config?.pc?.enabled)
       const showPartnerRow = config?.providers?.gemini?.showPartnerRow !== false
       const desktopCollapsed = Boolean(config?.collapsed)
       const isCollapsed = isCompactViewport ? !compactExpanded : desktopCollapsed
@@ -1081,7 +1238,7 @@ window.__ModuleLoader__.load({
         )
       }
 
-      if (enabledProviders.length === 0) {
+      if (enabledProviders.length === 0 && !pcEnabled) {
         return h(
           'div',
           { className: 'ul-footGroup', role: 'region', 'aria-label': t('title') },
@@ -1096,6 +1253,17 @@ window.__ModuleLoader__.load({
           ),
         )
       }
+
+      const pcBarItems = pcEnabled ? buildPcBarItems(pc, t) : []
+      const pcTooltip = pcEnabled ? buildPcTooltip(pc, t) : ''
+      const pcSev = (() => {
+        const rank = { normal: 0, warn: 1, danger: 2 }
+        let worst = 'normal'
+        for (const it of pcBarItems) {
+          if (rank[it.sev] > rank[worst]) worst = it.sev
+        }
+        return worst
+      })()
 
       const compactGauges = []
       if (isCollapsed) {
@@ -1148,6 +1316,16 @@ window.__ModuleLoader__.load({
               })
             }
           }
+        }
+        if (pcEnabled) {
+          compactGauges.push({
+            key: 'pc',
+            shortLabel: t('pcShort'),
+            items: pcBarItems,
+            status: pc?.status || 'loading',
+            severity: pcSev,
+            tooltip: pcTooltip,
+          })
         }
       }
 
@@ -1277,7 +1455,41 @@ window.__ModuleLoader__.load({
             }
           }
         }
+
+        if (pcEnabled) {
+          const pcSub =
+            pc && pc.status === 'ok'
+              ? [formatUptime(pc.uptime?.seconds, true), formatYen(pc.energy?.bootYen)].filter(Boolean).join(' · ')
+              : pc?.status === 'error'
+                ? t('error')
+                : t('loading')
+          rows.push(
+            h(
+              'button',
+              {
+                key: 'pc',
+                type: 'button',
+                className: 'ul-foot',
+                'aria-label': pcTooltip,
+                title: pcTooltip,
+                onClick: openPanel,
+              },
+              h(
+                'span',
+                { className: 'ul-footTop' },
+                h('span', { className: 'ul-footName' }, t('pcName')),
+                pcSub ? h('span', { className: 'ul-footSub' }, pcSub) : null,
+                h('span', { className: 'ul-spacer' }),
+                pcBarItems.length > 0 ? renderMetricPair(pcBarItems) : null,
+              ),
+              pcBarItems.length > 0 ? renderSplitOrSingleBar(pcBarItems, t('pcName')) : null,
+            ),
+          )
+        }
       }
+
+      const gaugeSize = compactGauges.length >= 6 ? 20 : compactGauges.length >= 5 ? 22 : 24
+      const compactAriaLabel = [railSummary.tooltip, pcEnabled ? pcTooltip : ''].filter(Boolean).join(' | ')
 
       return h(
         'div',
@@ -1296,15 +1508,15 @@ window.__ModuleLoader__.load({
                   key: 'ul-head-action',
                   type: 'button',
                   className: 'ul-compactBtn',
-                  'aria-label': railSummary.tooltip,
-                  title: error || railSummary.tooltip,
+                  'aria-label': compactAriaLabel,
+                  title: error || compactAriaLabel,
                   onClick: openPanel,
                 },
                 compactGauges.map((g) =>
                   h(
                     'span',
                     { key: g.key, className: 'ul-gaugeItem', title: g.tooltip },
-                    h(ProviderRing, { items: g.items, status: g.status, severity: g.severity, size: compactGauges.length >= 5 ? 22 : 24 }),
+                    h(ProviderRing, { items: g.items, status: g.status, severity: g.severity, size: gaugeSize }),
                     h(
                       'span',
                       {
@@ -1415,9 +1627,19 @@ window.__ModuleLoader__.load({
       const [gemWkDraft, setGemWkDraft] = useState('')
       const [misMoDraft, setMisMoDraft] = useState('')
       const [settingsMsg, setSettingsMsg] = useState('')
+      const [pcFuelDraft, setPcFuelDraft] = useState('')
+      const [pcCustomRateDraft, setPcCustomRateDraft] = useState('')
+      const [pcBaseWattsDraft, setPcBaseWattsDraft] = useState('')
+      const [pcCpuWattsDraft, setPcCpuWattsDraft] = useState('')
+      const [pcExtraWattsDraft, setPcExtraWattsDraft] = useState('')
+      const [pcPsuEffDraft, setPcPsuEffDraft] = useState('')
+      const [pcMsg, setPcMsg] = useState('')
 
       const config = snapshot?.config
       const providers = snapshot?.providers || {}
+      const pc = snapshot?.pc || null
+      const pcCfg = config?.pc || null
+      const pcEnabled = Boolean(pcCfg?.enabled)
       const order = snapshot?.order || ['chatgpt', 'claude', 'gemini', 'mistral']
       const agyHook = snapshot?.agyHook
       const displayMode = config?.displayMode || 'remaining'
@@ -1428,11 +1650,23 @@ window.__ModuleLoader__.load({
         setGem5hDraft(String(config.providers?.gemini?.budget5hTokens ?? 0))
         setGemWkDraft(String(config.providers?.gemini?.budgetWeeklyTokens ?? 0))
         setMisMoDraft(String(config.providers?.mistral?.budgetMonthlyTokens ?? 0))
+        setPcFuelDraft(String(config.pc?.fuelAdjustmentYen ?? -4.65))
+        setPcCustomRateDraft(String(config.pc?.customUnitYenPerKwh ?? 0))
+        setPcBaseWattsDraft(String(config.pc?.baseSystemWatts ?? 55))
+        setPcCpuWattsDraft(String(config.pc?.cpuDynamicWatts ?? 85))
+        setPcExtraWattsDraft(String(config.pc?.extraWatts ?? 0))
+        setPcPsuEffDraft(String(Math.round((config.pc?.psuEfficiency ?? 0.88) * 100)))
       }, [
         config?.refreshIntervalSec,
         config?.providers?.gemini?.budget5hTokens,
         config?.providers?.gemini?.budgetWeeklyTokens,
         config?.providers?.mistral?.budgetMonthlyTokens,
+        config?.pc?.fuelAdjustmentYen,
+        config?.pc?.customUnitYenPerKwh,
+        config?.pc?.baseSystemWatts,
+        config?.pc?.cpuDynamicWatts,
+        config?.pc?.extraWatts,
+        config?.pc?.psuEfficiency,
       ])
 
       useEffect(() => {
@@ -1461,6 +1695,27 @@ window.__ModuleLoader__.load({
           void store.updateConfig({ providers: { gemini: { showPartnerRow: !cur } } })
         }
       }, [config, store])
+
+      const togglePc = useCallback(() => {
+        void store.updateConfig({ pc: { enabled: !pcEnabled } })
+      }, [pcEnabled, store])
+
+      const handleSavePc = async () => {
+        setPcMsg('')
+        const parsedFuel = Number(pcFuelDraft)
+        const parsedEff = Number(pcPsuEffDraft)
+        const res = await store.updateConfig({
+          pc: {
+            fuelAdjustmentYen: Number.isFinite(parsedFuel) ? parsedFuel : -4.65,
+            customUnitYenPerKwh: Math.max(0, Number(pcCustomRateDraft) || 0),
+            baseSystemWatts: Math.max(1, Number(pcBaseWattsDraft) || 55),
+            cpuDynamicWatts: Math.max(0, Number(pcCpuWattsDraft) || 0),
+            extraWatts: Math.max(0, Number(pcExtraWattsDraft) || 0),
+            psuEfficiency: Number.isFinite(parsedEff) && parsedEff > 0 ? Math.min(1, Math.max(0.5, parsedEff / 100)) : 0.88,
+          },
+        })
+        if (res.ok) setPcMsg(t('saved'))
+      }
 
       const handleSaveDisplay = async () => {
         setSettingsMsg('')
@@ -1503,7 +1758,7 @@ window.__ModuleLoader__.load({
       }
 
       const enabledOrder = order.filter((id) => Boolean(config?.providers?.[id]?.enabled))
-      const lastFetched = Math.max(0, ...order.map((id) => Number(providers[id]?.fetchedAt) || 0))
+      const lastFetched = Math.max(0, Number(pc?.fetchedAt) || 0, ...order.map((id) => Number(providers[id]?.fetchedAt) || 0))
       const partnerRowOn = Boolean(config?.providers?.gemini?.enabled) && config?.providers?.gemini?.showPartnerRow !== false
 
       return h(
@@ -1601,7 +1856,21 @@ window.__ModuleLoader__.load({
                   h('span', null, t('partnerRowName')),
                 )
                 return [chip, partnerChip]
-              }),
+              }).concat([
+                h(
+                  'button',
+                  {
+                    key: 'pc',
+                    type: 'button',
+                    role: 'switch',
+                    'aria-checked': pcEnabled ? 'true' : 'false',
+                    className: 'ul-toggleChip',
+                    onClick: togglePc,
+                  },
+                  h('span', { className: 'ul-toggleDot', 'aria-hidden': 'true' }),
+                  h('span', null, t('pcName')),
+                ),
+              ]),
             ),
             !config?.providers?.claude?.enabled
               ? h('p', { className: 'ul-hint' }, t('claudeFutureNote'))
@@ -1725,6 +1994,132 @@ window.__ModuleLoader__.load({
                 : null,
             )
           }),
+
+          pcEnabled
+            ? (() => {
+                const pcOk = pc && pc.status === 'ok'
+                const renderUsageBar = (key, label, valueText, pct) => {
+                  const clamped = Math.max(0, Math.min(100, Number(pct) || 0))
+                  const sev = severityForUsage(clamped)
+                  const barCls =
+                    sev === 'danger' ? 'ul-footSeg--danger' : sev === 'warn' ? 'ul-footSeg--warn' : 'ul-footSeg--normal'
+                  return h(
+                    'div',
+                    { key, className: 'ul-window' },
+                    h(
+                      'div',
+                      { className: 'ul-windowHead' },
+                      h('span', { className: 'ul-windowLabel' }, label),
+                      h('span', { className: 'ul-spacer' }),
+                      valueText ? h('span', { className: 'ul-windowValue' }, valueText) : null,
+                      h(
+                        'span',
+                        { className: `ul-windowPct${sev === 'warn' ? ' ul-windowPct--warn' : sev === 'danger' ? ' ul-windowPct--danger' : ''}` },
+                        `${Math.round(clamped)}%`,
+                      ),
+                    ),
+                    h(
+                      'div',
+                      { className: 'ul-bar' },
+                      h('div', { className: `ul-barFill ${barCls}`, style: { width: `${clamped}%` } }),
+                    ),
+                  )
+                }
+
+                const bars = []
+                const tiles = []
+                if (pcOk) {
+                  bars.push(
+                    renderUsageBar(
+                      'cpu',
+                      t('pcCpu'),
+                      [pc.cpu?.model, pc.cpu?.threads ? `${pc.cpu.threads}T` : ''].filter(Boolean).join(' · '),
+                      pc.cpu?.percent,
+                    ),
+                  )
+                  bars.push(
+                    renderUsageBar(
+                      'mem',
+                      t('pcMemoryFull'),
+                      `${pc.memory?.usedGb ?? 0} / ${pc.memory?.totalGb ?? 0} GB`,
+                      pc.memory?.percent,
+                    ),
+                  )
+                  if (pc.gpu && pc.gpu.utilPercent !== null && pc.gpu.utilPercent !== undefined) {
+                    const gpuMeta = [
+                      pc.gpu.name,
+                      pc.gpu.vramUsedMb !== null && pc.gpu.vramTotalMb !== null
+                        ? `${(pc.gpu.vramUsedMb / 1024).toFixed(1)}/${(pc.gpu.vramTotalMb / 1024).toFixed(1)} GB`
+                        : '',
+                      pc.gpu.tempC !== null ? `${pc.gpu.tempC}°C` : '',
+                      pc.gpu.powerWatts !== null ? `${pc.gpu.powerWatts}W` : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')
+                    bars.push(renderUsageBar('gpu', t('pcGpu'), gpuMeta, pc.gpu.utilPercent))
+                  }
+
+                  tiles.push({
+                    key: 'uptime',
+                    label: t('pcUptime'),
+                    value: formatUptime(pc.uptime?.seconds, false),
+                    sub: pc.uptime?.bootAtMs ? t('pcBootSince', { time: formatBootDateTime(pc.uptime.bootAtMs) }) : '',
+                  })
+                  tiles.push({
+                    key: 'bootCost',
+                    label: t('pcBootCost'),
+                    value: formatYen(pc.energy?.bootYen),
+                    sub: `${(pc.energy?.bootKwh ?? 0).toFixed(2)} kWh`,
+                  })
+                  tiles.push({
+                    key: 'todayCost',
+                    label: t('pcTodayCost'),
+                    value: formatYen(pc.energy?.todayYen),
+                    sub: `${(pc.energy?.todayKwh ?? 0).toFixed(2)} kWh`,
+                  })
+                  tiles.push({
+                    key: 'monthCost',
+                    label: t('pcMonthCost'),
+                    value: formatYen(pc.energy?.monthYen),
+                    sub: `${(pc.energy?.monthKwh ?? 0).toFixed(2)} kWh`,
+                  })
+                  tiles.push({
+                    key: 'power',
+                    label: t('pcPower'),
+                    value: `${Math.round(pc.power?.wallWatts || 0)} W`,
+                    sub: pc.power?.gpuMeasured
+                      ? `${t('pcMeasuredGpu', { w: pc.power.gpuWatts })} · ${formatYen(pc.power.hourlyYen)}/h`
+                      : `${t('pcEstOnly')} · ${formatYen(pc.power?.hourlyYen)}/h`,
+                  })
+                  tiles.push({
+                    key: 'rate',
+                    label: t('pcRate'),
+                    value: `¥${(pc.tariff?.effectiveYenPerKwh ?? 0).toFixed(2)}/kWh`,
+                    sub: t(`pcTierLabel_${pc.tariff?.tierId || 'tier2'}`),
+                  })
+                }
+
+                return h(
+                  'section',
+                  { key: 'pc-card', className: 'ul-card', 'aria-label': t('pcTitle') },
+                  h(
+                    'div',
+                    { className: 'ul-cardHead' },
+                    h('h3', { className: 'ul-cardTitle' }, t('pcTitle')),
+                    pcOk && pc.uptime?.seconds !== undefined
+                      ? h('span', { className: 'ul-badge' }, `${t('pcUptime')} ${formatUptime(pc.uptime.seconds, false)}`)
+                      : h('span', { className: 'ul-badge' }, pc?.status === 'error' ? t('error') : t('loading')),
+                    h('span', { className: 'ul-spacer' }),
+                    pcOk && pc.power
+                      ? h('span', { className: 'ul-meta' }, `~${Math.round(pc.power.wallWatts)}W · ${formatYen(pc.power.hourlyYen)}/h`)
+                      : null,
+                  ),
+                  bars.length > 0 ? h('div', { className: 'ul-windows' }, bars) : null,
+                  tiles.length > 0 ? h('div', { className: 'ul-tiles' }, tiles.map((tile) => h(Tile, tile))) : null,
+                  pc?.error?.message ? h('p', { className: 'ul-error' }, pc.error.message) : null,
+                )
+              })()
+            : null,
 
           config
             ? h(
@@ -1858,6 +2253,150 @@ window.__ModuleLoader__.load({
                   ),
                   settingsMsg ? h('p', { className: 'ul-hint' }, settingsMsg) : null,
                 ),
+
+                pcCfg
+                  ? h(
+                      'div',
+                      { className: 'ul-settingRow' },
+                      h(
+                        'div',
+                        { className: 'ul-settingHead' },
+                        h('span', { className: 'ul-settingLabel' }, t('pcSettingsTitle')),
+                        pc?.tariff
+                          ? h('span', { className: 'ul-badge' }, `¥${pc.tariff.effectiveYenPerKwh.toFixed(2)}/kWh`)
+                          : null,
+                      ),
+                      h('p', { className: 'ul-hint' }, t('pcSettingsHint')),
+                      h(
+                        'div',
+                        { className: 'ul-formRow' },
+                        ['tier1', 'tier2', 'tier3'].map((tierKey, idx) =>
+                          h(
+                            'button',
+                            {
+                              key: tierKey,
+                              type: 'button',
+                              className: `ul-btn${pcCfg.tariffTier === tierKey && !(pcCfg.customUnitYenPerKwh > 0) ? ' ul-btn--active' : ''}`,
+                              onClick: () => void store.updateConfig({ pc: { tariffTier: tierKey, customUnitYenPerKwh: 0 } }),
+                            },
+                            t(`pcTier${idx + 1}`),
+                          ),
+                        ),
+                        h(
+                          'button',
+                          {
+                            type: 'button',
+                            role: 'switch',
+                            'aria-checked': pcCfg.includeRenewableSurcharge !== false ? 'true' : 'false',
+                            className: 'ul-toggleChip',
+                            onClick: () =>
+                              void store.updateConfig({ pc: { includeRenewableSurcharge: pcCfg.includeRenewableSurcharge === false } }),
+                          },
+                          h('span', { className: 'ul-toggleDot', 'aria-hidden': 'true' }),
+                          h('span', null, t('pcReSurcharge')),
+                        ),
+                        h(
+                          'button',
+                          {
+                            type: 'button',
+                            role: 'switch',
+                            'aria-checked': pcCfg.gasSetDiscount !== false ? 'true' : 'false',
+                            className: 'ul-toggleChip',
+                            onClick: () => void store.updateConfig({ pc: { gasSetDiscount: pcCfg.gasSetDiscount === false } }),
+                          },
+                          h('span', { className: 'ul-toggleDot', 'aria-hidden': 'true' }),
+                          h('span', null, t('pcGasSetDiscount')),
+                        ),
+                      ),
+                      h(
+                        'div',
+                        { className: 'ul-formRow' },
+                        h(
+                          'label',
+                          { className: 'ul-field' },
+                          h('span', null, t('pcFuelAdj')),
+                          h('input', {
+                            type: 'number',
+                            step: 0.01,
+                            className: 'ul-input ul-input--num',
+                            value: pcFuelDraft,
+                            onChange: (ev) => setPcFuelDraft(ev.target.value),
+                          }),
+                        ),
+                        h(
+                          'label',
+                          { className: 'ul-field' },
+                          h('span', null, t('pcCustomRate')),
+                          h('input', {
+                            type: 'number',
+                            min: 0,
+                            step: 0.05,
+                            className: 'ul-input ul-input--num',
+                            value: pcCustomRateDraft,
+                            onChange: (ev) => setPcCustomRateDraft(ev.target.value),
+                          }),
+                        ),
+                        h(
+                          'label',
+                          { className: 'ul-field' },
+                          h('span', null, t('pcBaseWatts')),
+                          h('input', {
+                            type: 'number',
+                            min: 1,
+                            max: 500,
+                            step: 5,
+                            className: 'ul-input ul-input--num',
+                            value: pcBaseWattsDraft,
+                            onChange: (ev) => setPcBaseWattsDraft(ev.target.value),
+                          }),
+                        ),
+                        h(
+                          'label',
+                          { className: 'ul-field' },
+                          h('span', null, t('pcCpuWatts')),
+                          h('input', {
+                            type: 'number',
+                            min: 0,
+                            max: 500,
+                            step: 5,
+                            className: 'ul-input ul-input--num',
+                            value: pcCpuWattsDraft,
+                            onChange: (ev) => setPcCpuWattsDraft(ev.target.value),
+                          }),
+                        ),
+                        h(
+                          'label',
+                          { className: 'ul-field' },
+                          h('span', null, t('pcExtraWatts')),
+                          h('input', {
+                            type: 'number',
+                            min: 0,
+                            max: 1000,
+                            step: 5,
+                            className: 'ul-input ul-input--num',
+                            value: pcExtraWattsDraft,
+                            onChange: (ev) => setPcExtraWattsDraft(ev.target.value),
+                          }),
+                        ),
+                        h(
+                          'label',
+                          { className: 'ul-field' },
+                          h('span', null, t('pcPsuEff')),
+                          h('input', {
+                            type: 'number',
+                            min: 50,
+                            max: 100,
+                            step: 1,
+                            className: 'ul-input ul-input--num',
+                            value: pcPsuEffDraft,
+                            onChange: (ev) => setPcPsuEffDraft(ev.target.value),
+                          }),
+                        ),
+                        h('button', { type: 'button', className: 'ul-btn', onClick: () => void handleSavePc() }, t('save')),
+                      ),
+                      pcMsg ? h('p', { className: 'ul-hint' }, pcMsg) : null,
+                    )
+                  : null,
               )
             : null,
 
@@ -1909,7 +2448,9 @@ window.__ModuleLoader__.load({
           let lastFetch = Date.now()
           const tick = () => {
             if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return
-            const intervalMs = ((store.getState().snapshot?.config?.refreshIntervalSec) || 180) * 1000
+            const cfg = store.getState().snapshot?.config
+            const baseMs = ((cfg?.refreshIntervalSec) || 180) * 1000
+            const intervalMs = cfg?.pc?.enabled ? Math.min(15000, baseMs) : baseMs
             if (Date.now() - lastFetch >= intervalMs) {
               lastFetch = Date.now()
               void store.loadStatus()

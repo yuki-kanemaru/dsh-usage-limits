@@ -12,6 +12,7 @@ import { join } from 'node:path'
 import { createConfigStore, PROVIDER_IDS } from './lib/config-store.js'
 import { readRequestBody } from './lib/http-body.js'
 import { createUsageTracker } from './lib/usage-tracker.js'
+import { createPcMonitor } from './lib/pc-monitor.js'
 import { inspectAgyHook, installAgyHook, uninstallAgyHook } from './lib/agy-hook-setup.js'
 import { fetchChatGptQuota } from './lib/providers/chatgpt.js'
 import { fetchClaudeQuota } from './lib/providers/claude.js'
@@ -49,6 +50,7 @@ function disabledProviderSnapshot(id, nowMs = Date.now()) {
 export function createUsageLimitsService(options = {}) {
   const configStore = createConfigStore({ dataDir: options.dataDir })
   const tracker = createUsageTracker({ dataDir: configStore.dataDir })
+  const pcMonitor = createPcMonitor({ dataDir: configStore.dataDir, ...(options.pcMonitorOptions || {}) })
   const getCredentials = typeof options.getCredentials === 'function' ? options.getCredentials : () => undefined
   const getDetectedGeminiPlan = typeof options.getDetectedGeminiPlan === 'function' ? options.getDetectedGeminiPlan : () => null
   const fetchImpl = typeof options.fetchImpl === 'function' ? options.fetchImpl : fetch
@@ -58,6 +60,7 @@ export function createUsageLimitsService(options = {}) {
   const inFlight = new Map()
   const fetchedWithoutCredentials = new Set()
   let lastAgyCacheMtimeMs = 0
+  let pcInFlight = null
 
   function readAgyCacheMtimeMs() {
     try {
@@ -169,12 +172,46 @@ export function createUsageLimitsService(options = {}) {
     return run
   }
 
+  async function refreshPc(force = false) {
+    const cfg = configStore.get()
+    if (!cfg.pc || cfg.pc.enabled !== true) {
+      return { enabled: false, status: 'disabled', fetchedAt: Date.now() }
+    }
+    const existing = pcMonitor.getLastSnapshot()
+    if (!force && existing && typeof existing.fetchedAt === 'number' && Date.now() - existing.fetchedAt < 4000) {
+      return existing
+    }
+    if (pcInFlight) return pcInFlight
+    pcInFlight = (async () => {
+      try {
+        return await pcMonitor.sample(cfg.pc)
+      } catch (err) {
+        return {
+          enabled: true,
+          status: 'error',
+          fetchedAt: Date.now(),
+          error: {
+            code: 'PC_TELEMETRY_ERROR',
+            message: err instanceof Error ? err.message : 'Could not read PC metrics.',
+          },
+        }
+      } finally {
+        pcInFlight = null
+      }
+    })()
+    return pcInFlight
+  }
+
   async function refresh(targetProvider) {
+    if (targetProvider === 'pc') {
+      await refreshPc(true)
+      return getSnapshot()
+    }
     if (targetProvider && PROVIDER_IDS.includes(targetProvider)) {
       await refreshOne(targetProvider)
       return getSnapshot()
     }
-    await Promise.allSettled(PROVIDER_IDS.map((id) => refreshOne(id)))
+    await Promise.allSettled([...PROVIDER_IDS.map((id) => refreshOne(id)), refreshPc(true)])
     return getSnapshot()
   }
 
@@ -208,10 +245,15 @@ export function createUsageLimitsService(options = {}) {
         }
       }
     }
+    const pcEnabled = cfg.pc?.enabled === true
+    const pcSnap = !pcEnabled
+      ? { enabled: false, status: 'disabled', fetchedAt: Date.now() }
+      : pcMonitor.getLastSnapshot() || { enabled: true, status: 'loading', fetchedAt: null }
     return {
       ok: true,
       config: cfg,
       providers,
+      pc: pcSnap,
       order: PROVIDER_IDS,
       agyHook: inspectAgyHook({ dataDir: configStore.dataDir }),
       serverTime: Date.now(),
@@ -239,6 +281,9 @@ export function createUsageLimitsService(options = {}) {
       next.providers.mistral.apiBaseURL !== prev.providers.mistral.apiBaseURL
     ) {
       await refreshOne('mistral')
+    }
+    if (next.pc.enabled && JSON.stringify(next.pc) !== JSON.stringify(prev.pc)) {
+      await refreshPc(true)
     }
     return getSnapshot()
   }
@@ -286,9 +331,11 @@ export function createUsageLimitsService(options = {}) {
   return {
     configStore,
     tracker,
+    pcMonitor,
     getSnapshot,
     refresh,
     refreshOne,
+    refreshPc,
     hasNewerAgyCache,
     needsCredentialRetry,
     updateConfig,
@@ -475,8 +522,13 @@ export function apply(ctx) {
       if (Date.now() - lastPollAt >= intervalMs) {
         lastPollAt = Date.now()
         void service.refresh()
-      } else if (service.hasNewerAgyCache()) {
-        void service.refreshOne('gemini')
+      } else {
+        if (service.hasNewerAgyCache()) {
+          void service.refreshOne('gemini')
+        }
+        if (service.configStore.get().pc?.enabled) {
+          void service.refreshPc(false)
+        }
       }
     }, 15000)
     timer.unref?.()
@@ -484,6 +536,7 @@ export function apply(ctx) {
       clearInterval(timer)
       sessionRoutes.clear()
       service.tracker.flush()
+      service.pcMonitor.flush()
     }
   }, 'dsh-usage-limits: background refresh')
 
@@ -494,14 +547,20 @@ export function apply(ctx) {
       if (anyLoading) {
         return service.refresh()
       }
-      const retryIds = ['mistral', 'claude'].filter(
-        (id) => snap.providers[id]?.enabled && service.needsCredentialRetry(id),
-      )
-      if (service.hasNewerAgyCache()) {
-        retryIds.push('gemini')
+      const tasks = []
+      for (const id of ['mistral', 'claude']) {
+        if (snap.providers[id]?.enabled && service.needsCredentialRetry(id)) {
+          tasks.push(service.refreshOne(id))
+        }
       }
-      if (retryIds.length > 0) {
-        await Promise.allSettled(retryIds.map((id) => service.refreshOne(id)))
+      if (service.hasNewerAgyCache()) {
+        tasks.push(service.refreshOne('gemini'))
+      }
+      if (snap.pc?.enabled && (!snap.pc.fetchedAt || Date.now() - snap.pc.fetchedAt >= 20000)) {
+        tasks.push(service.refreshPc(false))
+      }
+      if (tasks.length > 0) {
+        await Promise.allSettled(tasks)
         return service.getSnapshot()
       }
       return snap
