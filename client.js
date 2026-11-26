@@ -23,8 +23,10 @@ window.__ModuleLoader__.load({
 
     const PLUGIN_ID = 'dsh-usage-limits'
     const PANEL_ID = 'dsh-usage-limits-panel'
+    const FOOT_LIST_ID = 'dsh-usage-limits-foot-list'
     const ROUTE_PREFIX = '/_dsh/dsh-usage-limits'
     const STYLE_ID = 'dsh-usage-limits/usage.module.css'
+    const COMPACT_VIEWPORT_QUERY = '(max-width: 767px), (max-height: 640px)'
 
     const DICT = {
       en: {
@@ -34,6 +36,9 @@ window.__ModuleLoader__.load({
         refresh: 'Refresh',
         refreshing: 'Refreshing…',
         close: 'Close',
+        expandFooter: 'Expand usage limits',
+        collapseFooter: 'Collapse usage limits',
+        compactCount: '{count} active',
         remaining: 'left',
         used: 'used',
         allOff: 'All off',
@@ -111,6 +116,9 @@ window.__ModuleLoader__.load({
         refresh: '更新',
         refreshing: '更新中…',
         close: '閉じる',
+        expandFooter: '利用上限を展開',
+        collapseFooter: '利用上限を折りたたむ',
+        compactCount: '{count}件有効',
         remaining: '残',
         used: '使用',
         allOff: 'すべて OFF',
@@ -187,6 +195,20 @@ window.__ModuleLoader__.load({
 [class*="_footArea"] [class*="_footerActions"]{flex-direction:column}
 
 .ul-footGroup{box-sizing:border-box;flex:0 0 auto;width:100%;min-width:0;display:flex;flex-direction:column;gap:2px;margin:0 0 4px}
+.ul-footHead{display:flex;align-items:center;gap:4px;min-width:0;padding:0 2px 0 8px}
+.ul-footHeadTitle{box-sizing:border-box;flex:1;min-width:0;font:inherit;color:var(--dsw-alias-label-tertiary);text-align:left;cursor:pointer;background:0 0;border:0;border-radius:6px;padding:2px 0;margin:0;font-size:11px;font-weight:500;line-height:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .15s ease}
+.ul-footHeadTitle:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:1px}
+.ul-footList{display:flex;flex-direction:column;gap:2px;width:100%;min-width:0}
+.ul-footList[hidden]{display:none}
+.ul-footGroup--compact .ul-footList{max-height:min(40vh,220px);max-height:min(40dvh,220px);overflow-y:auto;overscroll-behavior:contain}
+.ul-footGroup--compact .ul-foot{padding:5px 8px;gap:4px}
+.ul-compactRow{display:flex;align-items:center;gap:2px;width:100%;min-width:0}
+.ul-compactBtn{box-sizing:border-box;flex:1;min-width:0;height:34px;font:inherit;color:var(--dsw-alias-label-secondary);text-align:left;cursor:pointer;background:0 0;border:1px solid transparent;border-radius:10px;padding:0 8px;margin:0;display:flex;align-items:center;gap:8px;transition:background .15s ease,border-color .15s ease,color .15s ease}
+.ul-compactBtn:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:1px}
+.ul-toggleBtn{box-sizing:border-box;flex:none;width:26px;height:26px;color:var(--dsw-alias-label-tertiary);cursor:pointer;background:0 0;border:1px solid transparent;border-radius:8px;margin:0;padding:0;display:inline-flex;align-items:center;justify-content:center;transition:background .15s ease,border-color .15s ease,color .15s ease}
+.ul-toggleBtn:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:1px}
+.ul-compactRow .ul-toggleBtn{width:34px;height:34px;border-radius:10px;color:var(--dsw-alias-label-secondary)}
+@media (hover:hover){.ul-footHeadTitle:hover{color:var(--dsw-alias-label-primary)}.ul-compactBtn:hover,.ul-toggleBtn:hover{color:var(--dsw-alias-label-primary);background:var(--dsw-alias-interactive-bg-hover);border-color:var(--dsw-alias-border-l2)}}
 .ul-foot{box-sizing:border-box;flex:0 0 auto;width:100%;min-width:0;font:inherit;color:var(--dsw-alias-label-secondary);text-align:left;cursor:pointer;background:0 0;border:1px solid transparent;border-radius:10px;flex-direction:column;gap:5px;margin:0;padding:7px 8px;display:flex;transition:background .15s ease,border-color .15s ease,color .15s ease}
 .ul-foot:hover{color:var(--dsw-alias-label-primary);background:var(--dsw-alias-interactive-bg-hover);border-color:var(--dsw-alias-border-l2)}
 .ul-foot:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:1px}
@@ -283,7 +305,10 @@ window.__ModuleLoader__.load({
 .ul-field{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--dsw-alias-label-secondary)}
 .ul-footer{align-items:center;gap:10px;display:flex;flex-wrap:wrap}
 
-@media (prefers-reduced-motion:reduce){.ul-foot,.ul-footSeg,.ul-barFill,.ul-toggleChip{transition:none}}
+@media (pointer:coarse){.ul-compactBtn{height:38px}.ul-footHeadTitle{padding:6px 0}.ul-toggleBtn,.ul-compactRow .ul-toggleBtn{width:36px;height:36px}}
+@media (max-width:767px),(max-height:640px){.ul-footList{max-height:min(40vh,220px);max-height:min(40dvh,220px);overflow-y:auto;overscroll-behavior:contain}}
+@media (max-width:600px){.ul-mainInner{padding:14px 12px 32px}.ul-card{padding:14px}}
+@media (prefers-reduced-motion:reduce){.ul-foot,.ul-footHeadTitle,.ul-compactBtn,.ul-toggleBtn,.ul-footSeg,.ul-barFill,.ul-toggleChip{transition:none}}
 `
 
     function detectLang(localeService) {
@@ -314,7 +339,7 @@ window.__ModuleLoader__.load({
     }
 
     function useLocaleRevision(localeService) {
-      const [, setRev] = useState(0)
+      const [rev, setRev] = useState(0)
       useEffect(() => {
         if (!localeService || typeof localeService.subscribe !== 'function') return undefined
         try {
@@ -323,6 +348,7 @@ window.__ModuleLoader__.load({
           return undefined
         }
       }, [localeService])
+      return rev
     }
 
     async function rpc(method, body) {
@@ -499,6 +525,72 @@ window.__ModuleLoader__.load({
       )
     }
 
+    function IconChevron({ expanded }) {
+      return h(
+        'svg',
+        {
+          width: 14,
+          height: 14,
+          viewBox: '0 0 16 16',
+          fill: 'none',
+          stroke: 'currentColor',
+          strokeWidth: 1.7,
+          strokeLinecap: 'round',
+          strokeLinejoin: 'round',
+          'aria-hidden': 'true',
+        },
+        h('path', { d: expanded ? 'm4 6 4 4 4-4' : 'm4 10 4-4 4 4' }),
+      )
+    }
+
+    function useCompactViewport() {
+      const [compact, setCompact] = useState(() => {
+        if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false
+        try {
+          return window.matchMedia(COMPACT_VIEWPORT_QUERY).matches
+        } catch {
+          return false
+        }
+      })
+      useEffect(() => {
+        if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return undefined
+        let mql
+        try {
+          mql = window.matchMedia(COMPACT_VIEWPORT_QUERY)
+        } catch {
+          return undefined
+        }
+        const update = () => setCompact(Boolean(mql.matches))
+        update()
+        try {
+          if (typeof mql.addEventListener === 'function') {
+            mql.addEventListener('change', update)
+            return () => {
+              try {
+                mql.removeEventListener('change', update)
+              } catch {
+                // Ignore cleanup failure.
+              }
+            }
+          }
+          if (typeof mql.addListener === 'function') {
+            mql.addListener(update)
+            return () => {
+              try {
+                mql.removeListener(update)
+              } catch {
+                // Ignore cleanup failure.
+              }
+            }
+          }
+        } catch {
+          // Ignore listener registration failure.
+        }
+        return undefined
+      }, [])
+      return compact
+    }
+
     class UsageLimitsErrorBoundary extends React.Component {
       constructor(props) {
         super(props)
@@ -610,13 +702,15 @@ window.__ModuleLoader__.load({
         const sev = severityFor(w.remainingPercent, w.disabled ? 'rate_limited' : 'ok')
         const label = formatWindowLabel(w, t, true)
         const countdown = w.resetsAt ? formatCountdown(w.resetsAt) : ''
+        const modeText = displayMode === 'used' ? t('used') : t('remaining')
+        const valueText = `${modeText} ${Math.round(clampedPct)}%`
         const tip = [
           `${label} ${Math.round(clampedPct)}%`,
           countdown ? t('resetIn', { left: countdown }) : '',
         ]
           .filter(Boolean)
           .join(' · ')
-        return { w, clampedPct, sev, label, tip }
+        return { w, clampedPct, sev, label, tip, valueText }
       })
     }
 
@@ -630,6 +724,7 @@ window.__ModuleLoader__.load({
           'aria-valuemin': 0,
           'aria-valuemax': 100,
           'aria-valuenow': Math.round(item.clampedPct),
+          'aria-valuetext': item.valueText,
           title: item.tip,
         },
         h('span', {
@@ -700,14 +795,30 @@ window.__ModuleLoader__.load({
     }
 
     function SidebarFooterCard({ wide, store, t, localeService, openPanel }) {
-      useLocaleRevision(localeService)
-      const { snapshot, loading } = useStore(store)
+      const localeRev = useLocaleRevision(localeService)
+      const { snapshot, loading, error } = useStore(store)
+      const isCompactViewport = useCompactViewport()
+      const [compactExpanded, setCompactExpanded] = useState(false)
+
+      useEffect(() => {
+        if (isCompactViewport) setCompactExpanded(false)
+      }, [isCompactViewport])
 
       const config = snapshot?.config
       const displayMode = config?.displayMode || 'remaining'
       const order = snapshot?.order || ['chatgpt', 'claude', 'gemini', 'mistral']
       const providers = snapshot?.providers || {}
       const showPartnerRow = config?.providers?.gemini?.showPartnerRow !== false
+      const desktopCollapsed = Boolean(config?.collapsed)
+      const isCollapsed = isCompactViewport ? !compactExpanded : desktopCollapsed
+
+      const handleToggleCollapse = useCallback(() => {
+        if (isCompactViewport) {
+          setCompactExpanded((prev) => !prev)
+        } else {
+          void store.updateConfig({ collapsed: !desktopCollapsed })
+        }
+      }, [isCompactViewport, desktopCollapsed, store])
 
       const enabledProviders = useMemo(
         () => order.map((id) => providers[id]).filter((p) => p && p.enabled),
@@ -717,24 +828,55 @@ window.__ModuleLoader__.load({
       const railSummary = useMemo(() => {
         let minRemaining = null
         let worstSev = 'normal'
+        let hasRateLimited = false
+        let hasAuthExpired = false
         const rank = { normal: 0, warn: 1, danger: 2 }
+        const parts = []
         for (const p of enabledProviders) {
-          const candidates = [worstPrimaryWindow(p)]
-          if (p.id === 'gemini' && showPartnerRow) {
-            candidates.push(...selectPartnerSidebarWindows(p))
+          if (p.status === 'rate_limited') hasRateLimited = true
+          if (p.status === 'auth_expired') hasAuthExpired = true
+          const primaryWin = worstPrimaryWindow(p)
+          const partnerWins = p.id === 'gemini' && showPartnerRow ? selectPartnerSidebarWindows(p) : []
+          let primaryMin = null
+          if (primaryWin) {
+            const sev = severityFor(primaryWin.remainingPercent, p.status)
+            if (rank[sev] > rank[worstSev]) worstSev = sev
+            if (primaryWin.remainingPercent !== null && primaryWin.remainingPercent !== undefined) {
+              minRemaining = minRemaining === null ? primaryWin.remainingPercent : Math.min(minRemaining, primaryWin.remainingPercent)
+              primaryMin = primaryWin.remainingPercent
+            }
+          } else {
+            const sev = severityFor(null, p.status)
+            if (rank[sev] > rank[worstSev]) worstSev = sev
           }
-          for (const win of candidates) {
-            if (!win) continue
+          if (primaryMin !== null) {
+            const shown = displayMode === 'used' ? 100 - primaryMin : primaryMin
+            parts.push(`${t(`providerName_${p.id}`)} ${Math.round(shown)}%`)
+          }
+          let partnerMin = null
+          for (const win of partnerWins) {
             const sev = severityFor(win.remainingPercent, p.status)
             if (rank[sev] > rank[worstSev]) worstSev = sev
             if (win.remainingPercent !== null && win.remainingPercent !== undefined) {
               minRemaining = minRemaining === null ? win.remainingPercent : Math.min(minRemaining, win.remainingPercent)
+              partnerMin = partnerMin === null ? win.remainingPercent : Math.min(partnerMin, win.remainingPercent)
             }
+          }
+          if (partnerMin !== null) {
+            const shown = displayMode === 'used' ? 100 - partnerMin : partnerMin
+            parts.push(`${t('partnerRowName')} ${Math.round(shown)}%`)
           }
         }
         const pct = minRemaining === null ? 0 : displayMode === 'used' ? 100 - minRemaining : minRemaining
-        return { pct, severity: worstSev }
-      }, [enabledProviders, displayMode, showPartnerRow])
+        return {
+          pct,
+          hasMetric: minRemaining !== null,
+          severity: worstSev,
+          hasRateLimited,
+          hasAuthExpired,
+          tooltip: parts.length > 0 ? `${t('title')} | ${parts.join(' · ')}` : t('title'),
+        }
+      }, [enabledProviders, displayMode, showPartnerRow, t, localeRev])
 
       if (!wide) {
         return h(
@@ -742,8 +884,8 @@ window.__ModuleLoader__.load({
           {
             type: 'button',
             className: 'ul-railButton',
-            'aria-label': t('title'),
-            title: t('title'),
+            'aria-label': railSummary.tooltip,
+            title: railSummary.tooltip,
             onClick: openPanel,
           },
           h(Ring, { percent: railSummary.pct, size: 18, severity: railSummary.severity }),
@@ -768,10 +910,28 @@ window.__ModuleLoader__.load({
         )
       }
 
+      if (!snapshot && error) {
+        return h(
+          'div',
+          { className: 'ul-footGroup', role: 'region', 'aria-label': t('title') },
+          h(
+            'button',
+            { type: 'button', className: 'ul-foot', title: error, onClick: openPanel },
+            h(
+              'span',
+              { className: 'ul-footTop' },
+              h('span', { className: 'ul-footName' }, t('title')),
+              h('span', { className: 'ul-spacer' }),
+              h('span', { className: 'ul-footPct ul-footPct--danger' }, t('error')),
+            ),
+          ),
+        )
+      }
+
       if (enabledProviders.length === 0) {
         return h(
           'div',
-          { className: 'ul-footGroup' },
+          { className: 'ul-footGroup', role: 'region', 'aria-label': t('title') },
           h(
             'button',
             { type: 'button', className: 'ul-foot', onClick: openPanel },
@@ -784,128 +944,209 @@ window.__ModuleLoader__.load({
         )
       }
 
-      const rows = []
-      for (const p of enabledProviders) {
-        const titleLabel = t(`providerName_${p.id}`)
-        const pair = selectSidebarWindows(p)
-
-        if (pair.length >= 2) {
-          rows.push(
-            renderDualWindowRow({
-              key: p.id,
-              titleLabel,
-              tooltipLabel: titleLabel,
-              items: toBarItems(pair, displayMode, t),
-              errorMessage: p.error?.message,
-              openPanel,
-            }),
+      let summaryNode = null
+      if (isCollapsed) {
+        const pctClass = `ul-footPct${railSummary.severity === 'warn' ? ' ul-footPct--warn' : railSummary.severity === 'danger' ? ' ul-footPct--danger' : ''}`
+        if (railSummary.hasMetric) {
+          summaryNode = h(
+            'span',
+            { className: 'ul-footMetric' },
+            h('span', { className: 'ul-footMetricLabel' }, displayMode === 'used' ? t('used') : t('remaining')),
+            h('span', { className: pctClass }, `${Math.round(railSummary.pct)}%`),
           )
+        } else if (railSummary.hasRateLimited) {
+          summaryNode = h('span', { className: 'ul-footPct ul-footPct--danger' }, t('rateLimited'))
+        } else if (railSummary.hasAuthExpired) {
+          summaryNode = h('span', { className: 'ul-footPct ul-footPct--danger' }, t('authExpired'))
+        } else if (error) {
+          summaryNode = h('span', { className: 'ul-footPct ul-footPct--danger' }, t('error'))
         } else {
-          const win = pair[0] || worstPrimaryWindow(p)
-          const sev = severityFor(win?.remainingPercent, p.status)
-          const pct = displayPercent(win, displayMode)
-
-          let subText = ''
-          let pctText = ''
-          let barPct = null
-
-          if (pct !== null && pct !== undefined) {
-            barPct = Math.max(0, Math.min(100, pct))
-            const label = formatWindowLabel(win, t, true)
-            const left = win?.resetsAt ? formatCountdown(win.resetsAt) : ''
-            subText = [label, left].filter(Boolean).join(' · ')
-            pctText = `${Math.round(pct)}%`
-          } else if (p.status === 'loading') {
-            subText = t('loading')
-          } else if (p.status === 'unconfigured') {
-            subText = t('unconfigured')
-          } else if (p.status === 'auth_expired') {
-            subText = t('authExpired')
-          } else if (p.status === 'rate_limited') {
-            subText = t('rateLimited')
-            barPct = displayMode === 'used' ? 100 : 0
-            pctText = displayMode === 'used' ? '100%' : '0%'
-          } else if (p.status === 'error') {
-            subText = t('error')
-          } else if (p.tracker) {
-            const tok = p.id === 'mistral' ? p.tracker.thisMonth?.tokens || 0 : p.tracker.last5h?.tokens || 0
-            if (p.id === 'gemini' && tok === 0 && !p.meta?.hasLiveCache) {
-              subText = t('agyUnsynced')
-            } else {
-              subText = `${formatTokens(tok)} ${t('tokensUnit')}`
-            }
-          }
-
-          const tooltip =
-            p.error?.message ||
-            (p.id === 'gemini' && !p.meta?.hasLiveCache
-              ? t('agyHookWaiting')
-              : [titleLabel, subText, pctText].filter(Boolean).join(' · '))
-
-          rows.push(
-            h(
-              'button',
-              {
-                key: p.id,
-                type: 'button',
-                className: 'ul-foot',
-                'aria-label': tooltip,
-                title: tooltip,
-                onClick: openPanel,
-              },
-              h(
-                'span',
-                { className: 'ul-footTop' },
-                h('span', { className: 'ul-footName' }, titleLabel),
-                h('span', { className: 'ul-spacer' }),
-                subText !== '' ? h('span', { className: 'ul-footSub' }, subText) : null,
-                pctText !== ''
-                  ? h(
-                      'span',
-                      { className: `ul-footPct${sev === 'warn' ? ' ul-footPct--warn' : sev === 'danger' ? ' ul-footPct--danger' : ''}` },
-                      pctText,
-                    )
-                  : null,
-              ),
-              h(
-                'span',
-                {
-                  className: 'ul-footBar',
-                  role: 'progressbar',
-                  'aria-label': titleLabel,
-                  'aria-valuemin': 0,
-                  'aria-valuemax': 100,
-                  'aria-valuenow': barPct === null ? 0 : Math.round(barPct),
-                },
-                barPct !== null
-                  ? h('span', {
-                      className: `ul-footSeg ul-footSeg--${sev}`,
-                      style: { width: `${barPct}%` },
-                    })
-                  : null,
-              ),
-            ),
-          )
+          summaryNode = h('span', { className: 'ul-footSub' }, t('compactCount', { count: enabledProviders.length }))
         }
+      }
 
-        if (p.id === 'gemini' && showPartnerRow) {
-          const partnerPair = selectPartnerSidebarWindows(p)
-          if (partnerPair.length > 0) {
+      const rows = []
+      if (!isCollapsed) {
+        for (const p of enabledProviders) {
+          const titleLabel = t(`providerName_${p.id}`)
+          const pair = selectSidebarWindows(p)
+
+          if (pair.length >= 2) {
             rows.push(
               renderDualWindowRow({
-                key: 'gemini-partner',
-                titleLabel: t('partnerRowName'),
-                tooltipLabel: t('partnerFull'),
-                items: toBarItems(partnerPair, displayMode, t),
-                errorMessage: null,
+                key: p.id,
+                titleLabel,
+                tooltipLabel: titleLabel,
+                items: toBarItems(pair, displayMode, t),
+                errorMessage: p.error?.message,
                 openPanel,
               }),
             )
+          } else {
+            const win = pair[0] || worstPrimaryWindow(p)
+            const sev = severityFor(win?.remainingPercent, p.status)
+            const pct = displayPercent(win, displayMode)
+
+            let subText = ''
+            let pctText = ''
+            let barPct = null
+
+            if (pct !== null && pct !== undefined) {
+              barPct = Math.max(0, Math.min(100, pct))
+              const label = formatWindowLabel(win, t, true)
+              const left = win?.resetsAt ? formatCountdown(win.resetsAt) : ''
+              subText = [label, left].filter(Boolean).join(' · ')
+              pctText = `${Math.round(pct)}%`
+            } else if (p.status === 'loading') {
+              subText = t('loading')
+            } else if (p.status === 'unconfigured') {
+              subText = t('unconfigured')
+            } else if (p.status === 'auth_expired') {
+              subText = t('authExpired')
+            } else if (p.status === 'rate_limited') {
+              subText = t('rateLimited')
+              barPct = displayMode === 'used' ? 100 : 0
+              pctText = displayMode === 'used' ? '100%' : '0%'
+            } else if (p.status === 'error') {
+              subText = t('error')
+            } else if (p.tracker) {
+              const tok = p.id === 'mistral' ? p.tracker.thisMonth?.tokens || 0 : p.tracker.last5h?.tokens || 0
+              if (p.id === 'gemini' && tok === 0 && !p.meta?.hasLiveCache) {
+                subText = t('agyUnsynced')
+              } else {
+                subText = `${formatTokens(tok)} ${t('tokensUnit')}`
+              }
+            }
+
+            const tooltip =
+              p.error?.message ||
+              (p.id === 'gemini' && !p.meta?.hasLiveCache
+                ? t('agyHookWaiting')
+                : [titleLabel, subText, pctText].filter(Boolean).join(' · '))
+            const valueText =
+              barPct !== null
+                ? `${displayMode === 'used' ? t('used') : t('remaining')} ${Math.round(barPct)}%`
+                : subText || undefined
+
+            rows.push(
+              h(
+                'button',
+                {
+                  key: p.id,
+                  type: 'button',
+                  className: 'ul-foot',
+                  'aria-label': tooltip,
+                  title: tooltip,
+                  onClick: openPanel,
+                },
+                h(
+                  'span',
+                  { className: 'ul-footTop' },
+                  h('span', { className: 'ul-footName' }, titleLabel),
+                  h('span', { className: 'ul-spacer' }),
+                  subText !== '' ? h('span', { className: 'ul-footSub' }, subText) : null,
+                  pctText !== ''
+                    ? h(
+                        'span',
+                        { className: `ul-footPct${sev === 'warn' ? ' ul-footPct--warn' : sev === 'danger' ? ' ul-footPct--danger' : ''}` },
+                        pctText,
+                      )
+                    : null,
+                ),
+                h(
+                  'span',
+                  {
+                    className: 'ul-footBar',
+                    role: 'progressbar',
+                    'aria-label': titleLabel,
+                    'aria-valuemin': 0,
+                    'aria-valuemax': 100,
+                    'aria-valuenow': barPct === null ? 0 : Math.round(barPct),
+                    'aria-valuetext': valueText,
+                  },
+                  barPct !== null
+                    ? h('span', {
+                        className: `ul-footSeg ul-footSeg--${sev}`,
+                        style: { width: `${barPct}%` },
+                      })
+                    : null,
+                ),
+              ),
+            )
+          }
+
+          if (p.id === 'gemini' && showPartnerRow) {
+            const partnerPair = selectPartnerSidebarWindows(p)
+            if (partnerPair.length > 0) {
+              rows.push(
+                renderDualWindowRow({
+                  key: 'gemini-partner',
+                  titleLabel: t('partnerRowName'),
+                  tooltipLabel: t('partnerFull'),
+                  items: toBarItems(partnerPair, displayMode, t),
+                  errorMessage: null,
+                  openPanel,
+                }),
+              )
+            }
           }
         }
       }
 
-      return h('div', { className: 'ul-footGroup', role: 'region', 'aria-label': t('title') }, rows)
+      return h(
+        'div',
+        {
+          className: isCompactViewport ? 'ul-footGroup ul-footGroup--compact' : 'ul-footGroup',
+          role: 'region',
+          'aria-label': t('title'),
+        },
+        h(
+          'div',
+          { className: isCollapsed ? 'ul-compactRow' : 'ul-footHead' },
+          isCollapsed
+            ? h(
+                'button',
+                {
+                  key: 'ul-head-action',
+                  type: 'button',
+                  className: 'ul-compactBtn',
+                  'aria-label': railSummary.tooltip,
+                  title: error || railSummary.tooltip,
+                  onClick: openPanel,
+                },
+                h(Ring, { percent: railSummary.pct, size: 16, severity: railSummary.severity }),
+                h('span', { className: 'ul-footName' }, t('title')),
+                h('span', { className: 'ul-spacer' }),
+                summaryNode,
+              )
+            : h(
+                'button',
+                {
+                  key: 'ul-head-action',
+                  type: 'button',
+                  className: 'ul-footHeadTitle',
+                  title: railSummary.tooltip,
+                  onClick: openPanel,
+                },
+                t('title'),
+              ),
+          h(
+            'button',
+            {
+              key: 'ul-toggle',
+              type: 'button',
+              className: 'ul-toggleBtn',
+              'aria-expanded': isCollapsed ? 'false' : 'true',
+              'aria-controls': FOOT_LIST_ID,
+              'aria-label': isCollapsed ? t('expandFooter') : t('collapseFooter'),
+              title: isCollapsed ? t('expandFooter') : t('collapseFooter'),
+              onClick: handleToggleCollapse,
+            },
+            h(IconChevron, { expanded: !isCollapsed }),
+          ),
+        ),
+        h('div', { id: FOOT_LIST_ID, className: 'ul-footList', hidden: isCollapsed }, isCollapsed ? null : rows),
+      )
     }
 
     function Tile({ label, value, sub }) {

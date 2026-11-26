@@ -1,6 +1,6 @@
 {
   "name": "dsh-usage-limits",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Displays ChatGPT, Claude, Gemini (Antigravity), and Mistral usage limits in the DeepSeek Harness left sidebar footer with per-provider toggles.",
   "license": "MIT",
   "author": "yuki-kanemaru",

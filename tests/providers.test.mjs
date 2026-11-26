@@ -28,22 +28,26 @@ test('config-store defaults Claude to disabled, Gemini partner row to enabled, a
     assert.equal(initial.providers.gemini.showPartnerRow, true)
     assert.equal(initial.providers.mistral.enabled, true)
     assert.equal(initial.displayMode, 'remaining')
+    assert.equal(initial.collapsed, false)
 
     const updated = store.update({
       providers: { claude: { enabled: true }, chatgpt: { enabled: false }, gemini: { showPartnerRow: false } },
       displayMode: 'used',
       refreshIntervalSec: 30,
+      collapsed: true,
     })
     assert.equal(updated.providers.claude.enabled, true)
     assert.equal(updated.providers.chatgpt.enabled, false)
     assert.equal(updated.providers.gemini.showPartnerRow, false)
     assert.equal(updated.displayMode, 'used')
     assert.equal(updated.refreshIntervalSec, 60)
+    assert.equal(updated.collapsed, true)
 
     const reloaded = createConfigStore({ dataDir: dir }).get()
     assert.equal(reloaded.providers.claude.enabled, true)
     assert.equal(reloaded.providers.chatgpt.enabled, false)
     assert.equal(reloaded.providers.gemini.showPartnerRow, false)
+    assert.equal(reloaded.collapsed, true)
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }
