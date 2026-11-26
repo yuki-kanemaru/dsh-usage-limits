@@ -190,6 +190,28 @@ test('Mistral adapter skips unallocated $0 api_budget so active Vibe budget disp
   })
   assert.equal(expired.status, 'auth_expired')
   assert.equal(JSON.stringify(expired).includes(secretCookie), false)
+
+  const partialOk = await fetchMistralQuota({
+    env: { MISTRAL_API_KEY: secretKey },
+    fetchImpl: async (url) => {
+      if (url.endsWith('/billing/subscription')) {
+        return new Response('rate limited', { status: 429 })
+      }
+      if (url.endsWith('/billing/budget')) {
+        return new Response(
+          JSON.stringify({
+            vibe_budget: { usage_percentage: 43, initial_budget: 20, currency: 'USD' },
+          }),
+          { status: 200 },
+        )
+      }
+      return new Response('{}', { status: 404 })
+    },
+  })
+  assert.equal(partialOk.status, 'ok')
+  assert.equal(partialOk.source, 'api')
+  assert.equal(partialOk.windows.length, 1)
+  assert.equal(partialOk.windows[0].remainingPercent, 57)
 })
 
 test('agy-hook-setup omits quotes on space-free paths and repairs legacy Windows quoted commands', () => {
@@ -261,6 +283,54 @@ test('usage-limits service preserves stale snapshot and parses helpers', async (
     assert.equal(parseChatGptUsage({ rate_limit: { primary_window: { used_percent: 10 } } }).windows[0].remainingPercent, 90)
     assert.equal(parseAgyQuotaCache({ quota: { 'gemini-weekly': { remaining_fraction: 0.5 } } }).windows[0].remainingPercent, 50)
   } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('usage-limits service flags credential retry when Mistral refreshes before credentials mount', async () => {
+  const dir = makeTmpDir()
+  const prevApiKey = process.env.MISTRAL_API_KEY
+  const prevCookie = process.env.MISTRAL_ADMIN_COOKIE
+  delete process.env.MISTRAL_API_KEY
+  delete process.env.MISTRAL_ADMIN_COOKIE
+  try {
+    let creds = undefined
+    const svc = createUsageLimitsService({
+      dataDir: dir,
+      getCredentials: () => creds,
+      fetchImpl: async (url) => {
+        if (url.endsWith('/billing/subscription')) {
+          return new Response(JSON.stringify({ plan_name: 'Vibe Pro' }), { status: 200 })
+        }
+        if (url.endsWith('/billing/budget')) {
+          return new Response(
+            JSON.stringify({
+              vibe_budget: { usage_percentage: 40, initial_budget: 20, currency: 'USD' },
+            }),
+            { status: 200 },
+          )
+        }
+        return new Response('{}', { status: 404 })
+      },
+    })
+
+    const before = await svc.refreshOne('mistral')
+    assert.equal(before.status, 'unconfigured')
+    assert.equal(svc.needsCredentialRetry('mistral'), false)
+
+    creds = {
+      resolve: async (ref) => (ref === 'MISTRAL_API_KEY' ? { value: 'test-mistral-key', source: 'store' } : undefined),
+    }
+    assert.equal(svc.needsCredentialRetry('mistral'), true)
+
+    const after = await svc.refreshOne('mistral')
+    assert.equal(after.status, 'ok')
+    assert.equal(after.source, 'api')
+    assert.equal(after.windows[0].remainingPercent, 60)
+    assert.equal(svc.needsCredentialRetry('mistral'), false)
+  } finally {
+    if (prevApiKey !== undefined) process.env.MISTRAL_API_KEY = prevApiKey
+    if (prevCookie !== undefined) process.env.MISTRAL_ADMIN_COOKIE = prevCookie
     rmSync(dir, { recursive: true, force: true })
   }
 })

@@ -56,6 +56,7 @@ export function createUsageLimitsService(options = {}) {
   const lastSnapshots = new Map()
   const lastGoodSnapshots = new Map()
   const inFlight = new Map()
+  const fetchedWithoutCredentials = new Set()
   let lastAgyCacheMtimeMs = 0
 
   function readAgyCacheMtimeMs() {
@@ -112,6 +113,11 @@ export function createUsageLimitsService(options = {}) {
     const run = (async () => {
       try {
         const credentials = getCredentials()
+        if ((id === 'mistral' || id === 'claude') && !credentials) {
+          fetchedWithoutCredentials.add(id)
+        } else {
+          fetchedWithoutCredentials.delete(id)
+        }
         let result
         if (id === 'chatgpt') {
           result = await fetchChatGptQuota({ fetchImpl })
@@ -273,6 +279,10 @@ export function createUsageLimitsService(options = {}) {
     }
   }
 
+  function needsCredentialRetry(id) {
+    return fetchedWithoutCredentials.has(id) && Boolean(getCredentials())
+  }
+
   return {
     configStore,
     tracker,
@@ -280,6 +290,7 @@ export function createUsageLimitsService(options = {}) {
     refresh,
     refreshOne,
     hasNewerAgyCache,
+    needsCredentialRetry,
     updateConfig,
     setMistralCookie,
     manageAgyHook,
@@ -303,7 +314,9 @@ function resolveRouteFromSession(session, routeCache) {
 }
 
 export function apply(ctx) {
+  let injectedCredentials
   const getCredentials = () => {
+    if (injectedCredentials) return injectedCredentials
     try {
       return ctx.get('credentials', false)
     } catch {
@@ -326,6 +339,48 @@ export function apply(ctx) {
   const service = createUsageLimitsService({
     getCredentials,
     getDetectedGeminiPlan,
+  })
+
+  // Refresh credential-backed providers as soon as DSH's credentials service
+  // mounts (avoids a startup race where Mistral caches `unconfigured` until
+  // the next polling tick) and whenever a relevant credential ref is updated.
+  ctx.inject(['credentials'], (credCtx) => {
+    credCtx.effect(() => {
+      injectedCredentials = credCtx.credentials
+      const refreshWithCredentials = async (id) => {
+        if (!service.configStore.get().providers[id]?.enabled) return
+        await service.refreshOne(id)
+        if (service.needsCredentialRetry(id)) {
+          await service.refreshOne(id)
+        }
+      }
+      void refreshWithCredentials('mistral')
+      void refreshWithCredentials('claude')
+
+      let disposeRefListener
+      try {
+        disposeRefListener = credCtx.on('credentials/reference-updated', (ref) => {
+          const cur = service.configStore.get()
+          const keyRef = cur.providers.mistral?.apiKeyEnv || 'MISTRAL_API_KEY'
+          const cookieRef = cur.providers.mistral?.adminCookieEnv || 'MISTRAL_ADMIN_COOKIE'
+          if ((ref === keyRef || ref === cookieRef) && cur.providers.mistral?.enabled) {
+            void service.refreshOne('mistral')
+          }
+          if (ref === 'CLAUDE_CODE_OAUTH_TOKEN' && cur.providers.claude?.enabled) {
+            void service.refreshOne('claude')
+          }
+        })
+      } catch {
+        // Optional event subscription.
+      }
+
+      return () => {
+        if (typeof disposeRefListener === 'function') disposeRefListener()
+        if (injectedCredentials === credCtx.credentials) {
+          injectedCredentials = undefined
+        }
+      }
+    }, 'dsh-usage-limits: credentials sync')
   })
 
   // Auto-repair legacy Windows quoted hook commands written by earlier versions.
@@ -439,8 +494,14 @@ export function apply(ctx) {
       if (anyLoading) {
         return service.refresh()
       }
+      const retryIds = ['mistral', 'claude'].filter(
+        (id) => snap.providers[id]?.enabled && service.needsCredentialRetry(id),
+      )
       if (service.hasNewerAgyCache()) {
-        await service.refreshOne('gemini')
+        retryIds.push('gemini')
+      }
+      if (retryIds.length > 0) {
+        await Promise.allSettled(retryIds.map((id) => service.refreshOne(id)))
         return service.getSnapshot()
       }
       return snap
