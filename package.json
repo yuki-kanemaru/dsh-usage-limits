@@ -1,6 +1,6 @@
 {
   "name": "dsh-usage-limits",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Displays ChatGPT, Claude, Gemini (Antigravity), Mistral usage limits and PC telemetry (CPU/RAM/GPU, uptime, myTOKYOGAS estimated electricity cost) in the DeepSeek Harness left sidebar footer.",
   "license": "MIT",
   "author": "yuki-kanemaru",

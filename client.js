@@ -115,6 +115,7 @@ window.__ModuleLoader__.load({
         pcMemoryFull: 'Memory',
         pcGpu: 'GPU',
         pcUptime: 'Uptime',
+        pcUpShort: 'Up {time}',
         pcBootSince: 'Booted {time}',
         pcBootCost: 'Cost this boot',
         pcTodayCost: 'Cost today',
@@ -233,6 +234,7 @@ window.__ModuleLoader__.load({
         pcMemoryFull: 'メモリ',
         pcGpu: 'GPU',
         pcUptime: '起動経過',
+        pcUpShort: '起動 {time}',
         pcBootSince: '{time} 起動',
         pcBootCost: '起動中の電気代',
         pcTodayCost: '本日の電気代',
@@ -309,6 +311,13 @@ window.__ModuleLoader__.load({
 .ul-footSeg--secondary{background:var(--dsw-alias-label-tertiary)}
 .ul-footSeg--warn{background:var(--dsw-alias-state-warn-primary)}
 .ul-footSeg--danger{background:var(--dsw-alias-state-error-primary)}
+.ul-pcRows{display:flex;flex-direction:column;gap:4px;width:100%;min-width:0}
+.ul-footGroup--compact .ul-pcRows{gap:3px}
+.ul-pcRow{display:grid;grid-template-columns:28px minmax(0,1fr) 30px;align-items:center;gap:6px;width:100%;min-width:0}
+.ul-pcRowLabel{color:var(--dsw-alias-label-tertiary);font-size:10px;font-weight:500;line-height:14px;white-space:nowrap}
+.ul-pcRowPct{color:var(--dsw-alias-label-secondary);text-align:right;font-size:11px;font-weight:500;line-height:14px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ul-pcRowPct--warn{color:var(--dsw-alias-state-warn-label,var(--dsw-alias-state-warn-primary))}
+.ul-pcRowPct--danger{color:var(--dsw-alias-state-error-primary)}
 .ul-spacer{flex:1}
 
 .ul-railButton{box-sizing:border-box;width:36px;height:36px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:1px solid transparent;border-radius:8px;flex:none;justify-content:center;align-items:center;margin:0 0 4px;padding:0;display:inline-flex}
@@ -1459,7 +1468,9 @@ window.__ModuleLoader__.load({
         if (pcEnabled) {
           const pcSub =
             pc && pc.status === 'ok'
-              ? [formatUptime(pc.uptime?.seconds, true), formatYen(pc.energy?.bootYen)].filter(Boolean).join(' · ')
+              ? [t('pcUpShort', { time: formatUptime(pc.uptime?.seconds, true) }), formatYen(pc.energy?.bootYen)]
+                  .filter(Boolean)
+                  .join(' · ')
               : pc?.status === 'error'
                 ? t('error')
                 : t('loading')
@@ -1478,11 +1489,30 @@ window.__ModuleLoader__.load({
                 'span',
                 { className: 'ul-footTop' },
                 h('span', { className: 'ul-footName' }, t('pcName')),
-                pcSub ? h('span', { className: 'ul-footSub' }, pcSub) : null,
                 h('span', { className: 'ul-spacer' }),
-                pcBarItems.length > 0 ? renderMetricPair(pcBarItems) : null,
+                pcSub ? h('span', { className: 'ul-footSub' }, pcSub) : null,
               ),
-              pcBarItems.length > 0 ? renderSplitOrSingleBar(pcBarItems, t('pcName')) : null,
+              pcBarItems.length > 0
+                ? h(
+                    'span',
+                    { className: 'ul-pcRows' },
+                    pcBarItems.map((it) =>
+                      h(
+                        'span',
+                        { key: it.w.id, className: 'ul-pcRow' },
+                        h('span', { className: 'ul-pcRowLabel' }, it.label),
+                        renderBarTrack(it, t('pcName')),
+                        h(
+                          'span',
+                          {
+                            className: `ul-pcRowPct${it.sev === 'warn' ? ' ul-pcRowPct--warn' : it.sev === 'danger' ? ' ul-pcRowPct--danger' : ''}`,
+                          },
+                          `${Math.round(it.clampedPct)}%`,
+                        ),
+                      ),
+                    ),
+                  )
+                : null,
             ),
           )
         }
