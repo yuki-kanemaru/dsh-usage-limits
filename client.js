@@ -102,6 +102,11 @@ window.__ModuleLoader__.load({
         providerName_claude: 'Claude',
         providerName_gemini: 'Gemini',
         providerName_mistral: 'Mistral',
+        providerShort_chatgpt: 'GPT',
+        providerShort_claude: 'Cld',
+        providerShort_gemini: 'Gem',
+        providerShort_partner: 'AGY',
+        providerShort_mistral: 'Mis',
         window_5h: '5-hour window',
         window_weekly: 'Weekly window',
         window_monthly: 'Monthly budget',
@@ -182,6 +187,11 @@ window.__ModuleLoader__.load({
         providerName_claude: 'Claude',
         providerName_gemini: 'Gemini',
         providerName_mistral: 'Mistral',
+        providerShort_chatgpt: 'GPT',
+        providerShort_claude: 'Cld',
+        providerShort_gemini: 'Gem',
+        providerShort_partner: 'AGY',
+        providerShort_mistral: 'Mis',
         window_5h: '5時間枠',
         window_weekly: '週間枠',
         window_monthly: '月間予算',
@@ -203,11 +213,15 @@ window.__ModuleLoader__.load({
 .ul-footGroup--compact .ul-footList{max-height:min(40vh,220px);max-height:min(40dvh,220px);overflow-y:auto;overscroll-behavior:contain}
 .ul-footGroup--compact .ul-foot{padding:5px 8px;gap:4px}
 .ul-compactRow{display:flex;align-items:center;gap:2px;width:100%;min-width:0}
-.ul-compactBtn{box-sizing:border-box;flex:1;min-width:0;height:34px;font:inherit;color:var(--dsw-alias-label-secondary);text-align:left;cursor:pointer;background:0 0;border:1px solid transparent;border-radius:10px;padding:0 8px;margin:0;display:flex;align-items:center;gap:8px;transition:background .15s ease,border-color .15s ease,color .15s ease}
+.ul-compactBtn{box-sizing:border-box;flex:1;min-width:0;min-height:44px;font:inherit;color:var(--dsw-alias-label-secondary);text-align:left;cursor:pointer;background:0 0;border:1px solid transparent;border-radius:10px;padding:3px 4px;margin:0;display:flex;align-items:center;justify-content:space-around;gap:2px;transition:background .15s ease,border-color .15s ease,color .15s ease}
 .ul-compactBtn:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:1px}
+.ul-gaugeItem{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:1px 0}
+.ul-gaugeLabel{font-size:10px;font-weight:500;line-height:12px;color:var(--dsw-alias-label-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.ul-gaugeLabel--warn{color:var(--dsw-alias-state-warn-label,var(--dsw-alias-state-warn-primary))}
+.ul-gaugeLabel--danger{color:var(--dsw-alias-state-error-primary)}
 .ul-toggleBtn{box-sizing:border-box;flex:none;width:26px;height:26px;color:var(--dsw-alias-label-tertiary);cursor:pointer;background:0 0;border:1px solid transparent;border-radius:8px;margin:0;padding:0;display:inline-flex;align-items:center;justify-content:center;transition:background .15s ease,border-color .15s ease,color .15s ease}
 .ul-toggleBtn:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:1px}
-.ul-compactRow .ul-toggleBtn{width:34px;height:34px;border-radius:10px;color:var(--dsw-alias-label-secondary)}
+.ul-compactRow .ul-toggleBtn{width:32px;height:44px;border-radius:10px;color:var(--dsw-alias-label-secondary)}
 @media (hover:hover){.ul-footHeadTitle:hover{color:var(--dsw-alias-label-primary)}.ul-compactBtn:hover,.ul-toggleBtn:hover{color:var(--dsw-alias-label-primary);background:var(--dsw-alias-interactive-bg-hover);border-color:var(--dsw-alias-border-l2)}}
 .ul-foot{box-sizing:border-box;flex:0 0 auto;width:100%;min-width:0;font:inherit;color:var(--dsw-alias-label-secondary);text-align:left;cursor:pointer;background:0 0;border:1px solid transparent;border-radius:10px;flex-direction:column;gap:5px;margin:0;padding:7px 8px;display:flex;transition:background .15s ease,border-color .15s ease,color .15s ease}
 .ul-foot:hover{color:var(--dsw-alias-label-primary);background:var(--dsw-alias-interactive-bg-hover);border-color:var(--dsw-alias-border-l2)}
@@ -305,7 +319,7 @@ window.__ModuleLoader__.load({
 .ul-field{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--dsw-alias-label-secondary)}
 .ul-footer{align-items:center;gap:10px;display:flex;flex-wrap:wrap}
 
-@media (pointer:coarse){.ul-compactBtn{height:38px}.ul-footHeadTitle{padding:6px 0}.ul-toggleBtn,.ul-compactRow .ul-toggleBtn{width:36px;height:36px}}
+@media (pointer:coarse){.ul-compactBtn{min-height:46px}.ul-footHeadTitle{padding:6px 0}.ul-toggleBtn{width:36px;height:36px}.ul-compactRow .ul-toggleBtn{width:36px;height:46px}}
 @media (max-width:767px),(max-height:640px){.ul-footList{max-height:min(40vh,220px);max-height:min(40dvh,220px);overflow-y:auto;overscroll-behavior:contain}}
 @media (max-width:600px){.ul-mainInner{padding:14px 12px 32px}.ul-card{padding:14px}}
 @media (prefers-reduced-motion:reduce){.ul-foot,.ul-footHeadTitle,.ul-compactBtn,.ul-toggleBtn,.ul-footSeg,.ul-barFill,.ul-toggleChip{transition:none}}
@@ -434,6 +448,16 @@ window.__ModuleLoader__.load({
       const primary = list.filter((w) => w.group !== 'partner' && w.remainingPercent !== null && w.remainingPercent !== undefined)
       const pool = primary.length > 0 ? primary : list.filter((w) => w.remainingPercent !== null && w.remainingPercent !== undefined)
       if (pool.length === 0) return list[0]
+      // Mistral budgets (e.g. Vibe vs API) are independent pools: an exhausted
+      // secondary API budget (0%) must not mask an active Vibe budget (>0%).
+      if (provider?.id === 'mistral' && pool.length > 1) {
+        const active = pool.filter((w) => w.remainingPercent > 0)
+        if (active.length > 0) {
+          const vibe = active.find((w) => String(w.id || w.label || '').toLowerCase().includes('vibe'))
+          if (vibe) return vibe
+          return active.reduce((min, cur) => (cur.remainingPercent < min.remainingPercent ? cur : min), active[0])
+        }
+      }
       return pool.reduce((min, cur) => (cur.remainingPercent < min.remainingPercent ? cur : min), pool[0])
     }
 
@@ -484,16 +508,17 @@ window.__ModuleLoader__.load({
       return ''
     }
 
+    function strokeColorFor(severity) {
+      if (severity === 'danger') return 'var(--dsw-alias-state-error-primary)'
+      if (severity === 'warn') return 'var(--dsw-alias-state-warn-primary)'
+      return 'var(--dsw-alias-label-primary)'
+    }
+
     function Ring({ percent, size, severity }) {
       const clamped = Math.max(0, Math.min(100, Number(percent) || 0))
       const circumference = 45.55
       const dashoffset = Math.round(circumference * (1 - clamped / 100) * 1000) / 1000
-      const stroke =
-        severity === 'danger'
-          ? 'var(--dsw-alias-state-error-primary)'
-          : severity === 'warn'
-            ? 'var(--dsw-alias-state-warn-primary)'
-            : 'var(--dsw-alias-label-primary)'
+      const stroke = strokeColorFor(severity)
       return h(
         'span',
         { className: 'ul-glyph', 'aria-hidden': 'true' },
@@ -501,19 +526,147 @@ window.__ModuleLoader__.load({
           'svg',
           { viewBox: '0 0 20 20', width: size, height: size, focusable: 'false' },
           h('circle', { cx: 10, cy: 10, r: 7.25, fill: 'none', stroke: 'currentColor', strokeWidth: 1.5, opacity: 0.35 }),
-          h('circle', {
-            cx: 10,
-            cy: 10,
-            r: 7.25,
-            fill: 'none',
-            stroke,
-            strokeWidth: 2.5,
-            strokeLinecap: 'round',
-            strokeDasharray: String(circumference),
-            strokeDashoffset: String(dashoffset),
-            transform: 'rotate(-90 10 10)',
-          }),
+          clamped > 0
+            ? h('circle', {
+                cx: 10,
+                cy: 10,
+                r: 7.25,
+                fill: 'none',
+                stroke,
+                strokeWidth: 2.5,
+                strokeLinecap: 'round',
+                strokeDasharray: String(circumference),
+                strokeDashoffset: String(dashoffset),
+                transform: 'rotate(-90 10 10)',
+              })
+            : null,
         ),
+      )
+    }
+
+    /**
+     * Codex-inspired circular gauge for collapsed sidebar summaries:
+     *  - 2 windows -> upper arc (5h / Vibe) + lower arc (week / API), both sweeping left-to-right
+     *  - 1 window  -> single full-circle ring
+     *  - 0 windows -> subtle dashed or status-tinted ring
+     */
+    function ProviderRing({ items, status, severity, size = 24 }) {
+      const r = 8.8
+      const circ = 2 * Math.PI * r
+      const circStr = circ.toFixed(2)
+      const arcLen = circ * 0.4
+      const arcStr = arcLen.toFixed(2)
+      const diamondFill = severity === 'normal' ? 'currentColor' : strokeColorFor(severity)
+      const diamondOpacity = severity === 'normal' ? 0.28 : 0.78
+      const shapes = []
+
+      if (items.length >= 2) {
+        const transforms = ['rotate(-162 12 12)', 'translate(24 0) scale(-1 1) rotate(18 12 12)']
+        for (let i = 0; i < 2; i += 1) {
+          const item = items[i]
+          const pct = Math.max(0, Math.min(100, Number(item.clampedPct) || 0))
+          const fillLen = Math.round((pct / 100) * arcLen * 100) / 100
+          const emptyDanger = pct <= 0 && item.sev === 'danger'
+          shapes.push(
+            h('circle', {
+              key: `t${i}`,
+              cx: 12,
+              cy: 12,
+              r,
+              fill: 'none',
+              stroke: emptyDanger ? 'var(--dsw-alias-state-error-primary)' : 'currentColor',
+              strokeWidth: 2.2,
+              strokeLinecap: 'round',
+              strokeDasharray: `${arcStr} ${circStr}`,
+              opacity: emptyDanger ? 0.35 : 0.2,
+              transform: transforms[i],
+            }),
+          )
+          if (fillLen > 0.2) {
+            shapes.push(
+              h('circle', {
+                key: `f${i}`,
+                cx: 12,
+                cy: 12,
+                r,
+                fill: 'none',
+                stroke: strokeColorFor(item.sev),
+                strokeWidth: 2.4,
+                strokeLinecap: 'round',
+                strokeDasharray: `${fillLen.toFixed(2)} ${circStr}`,
+                transform: transforms[i],
+              }),
+            )
+          }
+        }
+      } else if (items.length === 1) {
+        const item = items[0]
+        const pct = Math.max(0, Math.min(100, Number(item.clampedPct) || 0))
+        const fillLen = Math.round((pct / 100) * circ * 100) / 100
+        const emptyDanger = pct <= 0 && item.sev === 'danger'
+        shapes.push(
+          h('circle', {
+            key: 't0',
+            cx: 12,
+            cy: 12,
+            r,
+            fill: 'none',
+            stroke: emptyDanger ? 'var(--dsw-alias-state-error-primary)' : 'currentColor',
+            strokeWidth: 2.2,
+            opacity: emptyDanger ? 0.35 : 0.2,
+          }),
+        )
+        if (fillLen > 0.2) {
+          shapes.push(
+            h('circle', {
+              key: 'f0',
+              cx: 12,
+              cy: 12,
+              r,
+              fill: 'none',
+              stroke: strokeColorFor(item.sev),
+              strokeWidth: 2.4,
+              strokeLinecap: 'round',
+              strokeDasharray: `${fillLen.toFixed(2)} ${circStr}`,
+              transform: 'rotate(-90 12 12)',
+            }),
+          )
+        }
+      } else {
+        const isDanger = status === 'rate_limited' || status === 'auth_expired'
+        shapes.push(
+          h('circle', {
+            key: 't-empty',
+            cx: 12,
+            cy: 12,
+            r,
+            fill: 'none',
+            stroke: isDanger ? 'var(--dsw-alias-state-error-primary)' : 'currentColor',
+            strokeWidth: 2,
+            strokeDasharray: isDanger ? undefined : '2.8 3.2',
+            opacity: isDanger ? 0.45 : 0.25,
+          }),
+        )
+      }
+
+      shapes.push(
+        h('rect', {
+          key: 'center',
+          x: 9.6,
+          y: 9.6,
+          width: 4.8,
+          height: 4.8,
+          rx: 1.1,
+          transform: 'rotate(45 12 12)',
+          fill: diamondFill,
+          opacity: diamondOpacity,
+        }),
+      )
+
+      return h(
+        'span',
+        { className: 'ul-glyph', 'aria-hidden': 'true' },
+        h('svg', { viewBox: '0 0 24 24', width: size, height: size, focusable: 'false' }, shapes),
       )
     }
 
@@ -944,24 +1097,57 @@ window.__ModuleLoader__.load({
         )
       }
 
-      let summaryNode = null
+      const compactGauges = []
       if (isCollapsed) {
-        const pctClass = `ul-footPct${railSummary.severity === 'warn' ? ' ul-footPct--warn' : railSummary.severity === 'danger' ? ' ul-footPct--danger' : ''}`
-        if (railSummary.hasMetric) {
-          summaryNode = h(
-            'span',
-            { className: 'ul-footMetric' },
-            h('span', { className: 'ul-footMetricLabel' }, displayMode === 'used' ? t('used') : t('remaining')),
-            h('span', { className: pctClass }, `${Math.round(railSummary.pct)}%`),
-          )
-        } else if (railSummary.hasRateLimited) {
-          summaryNode = h('span', { className: 'ul-footPct ul-footPct--danger' }, t('rateLimited'))
-        } else if (railSummary.hasAuthExpired) {
-          summaryNode = h('span', { className: 'ul-footPct ul-footPct--danger' }, t('authExpired'))
-        } else if (error) {
-          summaryNode = h('span', { className: 'ul-footPct ul-footPct--danger' }, t('error'))
-        } else {
-          summaryNode = h('span', { className: 'ul-footSub' }, t('compactCount', { count: enabledProviders.length }))
+        for (const p of enabledProviders) {
+          const titleLabel = t(`providerName_${p.id}`)
+          const shortLabel = t(`providerShort_${p.id}`)
+          const pair = selectSidebarWindows(p)
+          const items = toBarItems(pair, displayMode, t)
+          const effectiveWin = worstPrimaryWindow(p)
+          const effectiveSev = severityFor(effectiveWin?.remainingPercent, p.status)
+          const statusText =
+            p.status === 'unconfigured'
+              ? t('unconfigured')
+              : p.status === 'auth_expired'
+                ? t('authExpired')
+                : p.status === 'rate_limited'
+                  ? t('rateLimited')
+                  : p.status === 'error'
+                    ? t('error')
+                    : ''
+          const tip =
+            p.error?.message ||
+            (items.length > 0
+              ? [titleLabel, ...items.map((it) => it.tip)].join(' | ')
+              : [titleLabel, statusText].filter(Boolean).join(' · '))
+          compactGauges.push({
+            key: p.id,
+            shortLabel,
+            items,
+            status: p.status,
+            severity: effectiveSev,
+            tooltip: tip,
+          })
+
+          if (p.id === 'gemini' && showPartnerRow) {
+            const partnerPair = selectPartnerSidebarWindows(p)
+            if (partnerPair.length > 0) {
+              const partnerItems = toBarItems(partnerPair, displayMode, t)
+              const partnerMin = partnerPair.reduce(
+                (min, cur) => (min === null || cur.remainingPercent < min ? cur.remainingPercent : min),
+                null,
+              )
+              compactGauges.push({
+                key: 'gemini-partner',
+                shortLabel: t('providerShort_partner'),
+                items: partnerItems,
+                status: 'ok',
+                severity: severityFor(partnerMin, 'ok'),
+                tooltip: [t('partnerFull'), ...partnerItems.map((it) => it.tip)].join(' | '),
+              })
+            }
+          }
         }
       }
 
@@ -1114,10 +1300,20 @@ window.__ModuleLoader__.load({
                   title: error || railSummary.tooltip,
                   onClick: openPanel,
                 },
-                h(Ring, { percent: railSummary.pct, size: 16, severity: railSummary.severity }),
-                h('span', { className: 'ul-footName' }, t('title')),
-                h('span', { className: 'ul-spacer' }),
-                summaryNode,
+                compactGauges.map((g) =>
+                  h(
+                    'span',
+                    { key: g.key, className: 'ul-gaugeItem', title: g.tooltip },
+                    h(ProviderRing, { items: g.items, status: g.status, severity: g.severity, size: compactGauges.length >= 5 ? 22 : 24 }),
+                    h(
+                      'span',
+                      {
+                        className: `ul-gaugeLabel${g.severity === 'warn' ? ' ul-gaugeLabel--warn' : g.severity === 'danger' ? ' ul-gaugeLabel--danger' : ''}`,
+                      },
+                      g.shortLabel,
+                    ),
+                  ),
+                ),
               )
             : h(
                 'button',
